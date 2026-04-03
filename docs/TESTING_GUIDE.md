@@ -137,6 +137,19 @@ Use the tools that match the project, not every tool at once.
 
 If the project already uses a tool, keep using it.
 
+## When a test fails
+
+Use this order before changing the test:
+
+1. Re-run the failing test by itself so you can focus on one problem.
+2. Read the full error message and find the exact assertion, status code, or missing element.
+3. Check whether the failure is a real product bug, a broken test, or an outdated test after an intentional code change.
+4. Check the real behavior yourself in the browser or API client.
+5. For async or API tests, check timing, request data, response data, and test setup.
+6. Fix the real cause first. Only update the test when the intended behavior changed.
+
+If a test passes sometimes and fails sometimes, look for shared state, missing cleanup, or timing issues.
+
 ## Team Habits
 
 - do not wait until the end of the sprint to start testing

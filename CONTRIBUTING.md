@@ -2,20 +2,28 @@
 
 This guide explains how we work together in the practicum project.
 
+Starter-kit note:
+
+- this starter kit currently uses the workflow below
+- if your team changes the branching model later, update this document
+- this starter kit currently documents one workflow: `feature -> development -> main`
+- day-to-day work happens only on feature branches
+- do not code, commit, or push feature work directly on `development` or `main`
+
 Our goals are simple:
 
 - keep changes small
 - make PRs easy to review
-- protect `development` and `main`
+- protect long-lived branches like `development` and `main`
 - help each other early when blocked
 
 ## Branches
 
 | Branch | Purpose |
 | --- | --- |
-| `main` | Production branch. Only release PRs go here. |
-| `development` | Team integration branch. Feature PRs merge here first. |
-| `feature/*`, `fix/*`, `chore/*`, `refactor/*`, `docs/*`, `test/*` | Day-to-day work branches. |
+| `main` | Protected production branch. Only release PRs from `development` go here. |
+| `development` | Protected integration branch. Feature PRs merge here first. |
+| `feature/*`, `fix/*`, `chore/*`, `refactor/*`, `docs/*`, `test/*` | The only branches used for day-to-day work. |
 
 ## Standard Workflow
 
@@ -26,7 +34,9 @@ git checkout development
 git pull origin development
 ```
 
-### 2. Create a branch for one focused task
+Only use `development` to sync with the remote. Do not do feature work there.
+
+### 2. Create a feature branch right away
 
 ```bash
 git checkout -b feature/short-description
@@ -38,7 +48,7 @@ Examples:
 - `fix/mobile-nav`
 - `chore/update-readme`
 
-See `GIT_GUIDE.md` for naming conventions.
+See `docs/GIT_GUIDE.md` for naming conventions.
 
 ### 3. Build in small steps
 
@@ -64,7 +74,7 @@ Do a quick self-review:
 
 ### 5. Keep your branch up to date
 
-Default team guidance: merge the latest `development` into your feature branch.
+Merge the latest `development` into your feature branch.
 
 ```bash
 git fetch origin
@@ -75,7 +85,7 @@ Why we use this as the default:
 
 - it is easier for beginners to recover from
 - it avoids accidental history rewrites
-- the final merge into `development` will still be a squash merge
+- the final PR can still use squash merge
 
 ### 6. Open a pull request
 
@@ -132,6 +142,8 @@ const title = "Our App";
 >>>>>>> origin/development
 ```
 
+The incoming branch name in the marker will match the branch you merged from.
+
 - Everything between `<<<<<<< HEAD` and `=======` is your version
 - Everything between `=======` and `>>>>>>>` is the incoming version
 - You need to pick one, combine them, or write something new
@@ -176,7 +188,7 @@ Then ask a teammate before trying again.
 
 ### Tips to avoid conflicts
 
-- Pull from `development` frequently — the longer your branch diverges, the harder conflicts get
+- Pull from `development` frequently — the longer your feature branch diverges, the harder conflicts get
 - Keep PRs small and focused on one thing
 - Coordinate with teammates when working in the same file
 
@@ -196,7 +208,8 @@ Before asking for review, make sure:
 
 ## Team Norms
 
-- Never commit directly to `development` or `main`
+- Never do day-to-day work directly on `development` or `main`
+- Never commit feature work directly to `development` or `main`
 - Keep PRs small when possible
 - Ask for help when blocked for too long
 - Prefer clear code over clever code

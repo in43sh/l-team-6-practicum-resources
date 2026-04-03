@@ -136,6 +136,35 @@ Example:
 </button>
 ```
 
+## Keeping It Responsive
+
+Responsive design means the page should still feel usable and readable on small phones, tablets, laptops, and larger screens.
+
+- start with the mobile layout first, then add `sm:`, `md:`, and `lg:` changes only when the layout truly needs them
+- avoid fixed widths and heights when possible; prefer flexible classes like `w-full`, `max-w-*`, `min-h-*`, `flex-wrap`, and `grid-cols-*`
+- let sections stack naturally on small screens, then place them side by side on larger screens
+- keep text readable by limiting line length and avoiding text that becomes too tiny on mobile
+- make images, cards, forms, and buttons fit their container instead of overflowing off the screen
+- watch for long labels, error messages, and table content that can break narrow layouts
+- test common screen sizes in browser dev tools before opening a PR
+- if a layout needs too many breakpoint fixes, simplify the component structure instead of layering on more classes
+
+Common patterns:
+
+- use `flex-col md:flex-row` when content should stack on mobile and sit side by side later
+- use `grid-cols-1 md:grid-cols-2 lg:grid-cols-3` for cards and repeated content
+- use `overflow-x-auto` around wide tables or code blocks so they do not break the whole page
+- use `w-full` on inputs and buttons when they should adapt to narrow containers
+
+Example:
+
+```jsx
+<section className="grid grid-cols-1 gap-4 md:grid-cols-2">
+  <div className="rounded bg-white p-4">Main content</div>
+  <aside className="rounded bg-gray-100 p-4">Sidebar</aside>
+</section>
+```
+
 ## TypeScript Tips
 
 If your project uses TypeScript, a few habits will save you a lot of confusion:

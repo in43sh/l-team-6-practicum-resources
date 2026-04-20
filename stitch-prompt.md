@@ -139,16 +139,14 @@ The application contains the following pages:
 1.  /           — Landing page (public)
 2.  /signup     — Sign up (public)
 3.  /login      — Log in (public)
-4.  /pricing    — Pricing (public)
-5.  /about      — About Sonix (public)
-6.  /privacy    — Privacy policy (public)
-7.  /terms      — Terms of service (public)
-8.  /visualizer — Main visualizer (authenticated)
-9.  /explore    — Explore visuals / global library (authenticated)
-10. /playlists  — My playlists (authenticated)
-11. /playlists/:id — Playlist detail (authenticated)
-12. /settings   — User settings (authenticated)
-13. /404        — Error / not found (public)
+4.  /about      — About Sonix (public)
+5.  /privacy    — Privacy policy (public)
+6.  /terms      — Terms of service (public)
+7.  /visualizer — Main visualizer (authenticated)
+8.  /explore    — Explore visuals / global library (authenticated)
+9.  /favorites  — My favorited visuals (authenticated)
+10. /settings   — User settings (authenticated)
+11. /404        — Error / not found (public)
 
 Route rules:
 - Public site pages should expose Privacy and Terms in the footer so the legal pages are always reachable
@@ -170,10 +168,6 @@ Login and Sign Up pages:
 - Dots loop seamlessly when they exit the top edge
 - Reduced-motion fallback: static #0A0A0F background, no particles
 
-Pricing page:
-- Slow diagonal gradient shift between #0A0A0F and a faint #12121A with a barely-there purple tint — 15–20s cycle
-- No intense animation — this is a conversion-focused page
-
 ---
 
 HOTKEYS (desktop only)
@@ -187,7 +181,6 @@ Visualizer screen keyboard shortcuts:
 - ←      — Previous visual
 - →      — Next visual
 - H      — Toggle favorite (heart)
-- P      — Open current playlist modal
 - D      — Open device selector dropdown
 - ? or K — Open keyboard shortcuts overlay
 
@@ -211,7 +204,7 @@ Steps (in order):
 1. Targets device dropdown — Title: "Connect your audio" — Body: "Choose a microphone or audio device to start the visualizer."
 2. Targets play/pause button — Title: "Start the show" — Body: "Press play to begin cycling through visuals synced to your audio."
 3. Targets Explore link in hamburger nav — Title: "Discover visuals" — Body: "Browse the library of reactive visuals and save your favorites."
-4. Targets add-to-playlist button (+) — Title: "Build playlists" — Body: "Curate collections of visuals for different moods and sets."
+4. Targets favorite (heart) button — Title: "Save your favorites" — Body: "Heart any visual to save it. Find all your favorites in My Favorites."
 5. Targets fullscreen button — Title: "Go fullscreen" — Body: "Use fullscreen for live performances or immersive sessions."
 
 Tooltip card:
@@ -272,11 +265,13 @@ COMPONENT SPECIFICATIONS
 
 NAV VARIANTS (pages that use a full navbar must use the correct variant — no exceptions)
 
-Variant A — Public marketing (landing, pricing, about):
+The navbar stays as consistent as possible across pages. Variants exist only where layout context strictly requires it. For a fully distraction-free visualizer experience, users can enter fullscreen mode — no need for more nav variants.
+
+Variant A — Public marketing (landing, about):
 - Height: 64px
 - Background: surface #12121A, 1px bottom border #2A2A3D
 - Left: logo lockup (icon + wordmark)
-- Center: nav links "Features / Pricing / About" in body text, text-secondary; active link has #7C5CFC underline
+- Center: nav links "Features / About" in body text, text-secondary; active link has #7C5CFC underline
 - Right: "Log In" ghost button (32px) + "Sign Up" primary button (32px), 12px gap between
 
 Variant B — Public minimal (login, signup):
@@ -286,12 +281,11 @@ Variant B — Public minimal (login, signup):
 - Right: empty
 (The form is the page — no secondary navigation needed)
 
-Variant C — Authenticated standard (explore, playlists, playlist detail, settings):
+Variant C — Authenticated standard (explore, favorites, settings):
 - Height: 64px, same background
 - Left: logo lockup (links to /visualizer)
 - Center: empty
 - Right: user avatar (32px circle, gradient fill #7C5CFC→#00E5FF) + "Alex Rivera" (body text) + chevron-down icon; clicking opens user modal
-- Free-tier variant: add a "Free" pill badge (surface-elevated bg, text-secondary, 999px radius, 4px×10px padding, 12px font) adjacent to the username
 
 Variant D — Visualizer (maximized canvas, minimal chrome):
 - Height: 48px
@@ -304,34 +298,33 @@ Variant D — Visualizer (maximized canvas, minimal chrome):
 User modal (opened from user avatar in Variant C and D):
 - Floating panel, 240px wide, right-aligned below trigger, 8px from right edge
 - Surface-elevated background, 16px radius, 8px inner padding, 1px #2A2A3D border, purple glow
-- Top row: avatar (32px) + name (body/500) + plan badge ("Free" pill or "Pro" pill in accent purple)
+- Top row: avatar (32px) + name (body/500)
 - 1px #2A2A3D divider, 8px below top row
 - Menu items (36px each, icon left + label, sidebar interaction states):
   - Settings — gear icon
-  - Upgrade to Pro — star icon (free users only; hidden for Pro)
   - Keyboard Shortcuts — keyboard icon (opens hotkey modal)
   - 1px divider
   - Log Out — exit icon, #FF4D6D text color
 
 Hamburger side-drawer (Variant D only):
 - Width: 240px, slides in from left, surface background, 1px right border #2A2A3D
-- Items: Visualizer / Explore / My Playlists / Settings — sidebar interaction states
+- Items: Visualizer / Explore / My Favorites / Settings — sidebar interaction states
 - Closes on backdrop click or Escape key
 
 FOOTER VARIANTS (apply the correct footer behavior per page type)
 
-Variant A — Public site footer (landing, pricing, about, 404):
+Variant A — Public site footer (landing, about, 404):
 - Height: 64px
 - Background: surface #12121A, 1px top border #2A2A3D
 - Left: "© 2025 Sonix" — caption, text-secondary
-- Right: legal links "Privacy / Terms" plus optional lightweight product links such as "About" or "Pricing"; caption text, text-secondary, 24px gaps
+- Right: legal links "Privacy / Terms" plus optional lightweight product links such as "About"; caption text, text-secondary, 24px gaps
 
 Variant B — Public auth / legal footer (login, signup, privacy, terms):
 - Minimal footer treatment; do not let it compete with the main form or legal document content
 - Can be a centered caption row with "Privacy / Terms" links, 48px tall, text-secondary
 - On /privacy or /terms, the current page link can use text-primary while the other remains text-secondary
 
-Variant C — Authenticated app footer (explore, playlists, playlist detail, settings):
+Variant C — Authenticated app footer (explore, favorites, settings):
 - Default to no persistent footer unless the screen needs one for layout balance
 - If shown, keep it compact, secondary, and non-marketing in tone
 
@@ -389,7 +382,7 @@ Behavior and state rules:
 - Visualizer denied state: explain audio access was blocked; offer retry or change-device actions
 - Audio-disconnected state: preserve selected visual, pause reactivity, show non-destructive notice
 - Visual library empty-search state: "No visuals match your filters" with a reset-filters action
-- Playlist empty state: encourage adding visuals rather than showing a blank list
+- Favorites empty state: encourage exploring visuals and hearting them rather than showing a blank list
 - On tablet and phone, uncertain features may be labeled "Desktop preferred" instead of being silently removed
 
 ---
@@ -419,7 +412,7 @@ Features section:
 - Feature content:
   1. Icon: waveform / "Real-time Visuals" — "Every beat, every frequency rendered live. Zero latency between your audio and the screen."
   2. Icon: mic / "Microphone Input" — "Use any microphone, line-in, or virtual audio source. Works with your DAW, mixer, or just your voice."
-  3. Icon: layers / "Playlist Collections" — "Curate sequences of visuals that match your set, your mood, or your audience. Reorder on the fly."
+  3. Icon: heart / "Save Favorites" — "Heart any visual to save it instantly. Your favorites are always one tap away."
 
 Use Cases section:
 - Background: #0A0A0F, 96px vertical padding
@@ -435,25 +428,6 @@ Use Cases section:
   2. "Streaming" — "Make your stream unforgettable" — "Add a reactive visual layer to Twitch or YouTube broadcasts. No extra hardware required."
   3. "Meditation & Focus" — "Sound made visible, stress made small" — "Pair ambient audio with slow reactive visuals to create calming environments for study or meditation."
   4. "Events & Venues" — "Fill the room with sound and light" — "Drive large-format displays at clubs, galleries, and events using Sonix on any laptop."
-
-Pricing preview section:
-- Background: surface #12121A, 96px vertical padding
-- Section label: "PLANS" — caption, text-secondary, letter-spacing 0.12em, centered
-- Section title: "Start free, go pro when you're ready" — H1, centered
-- Two pricing cards side by side, 480px each, centered, 24px gap:
-
-  Free card: surface background, 1px #2A2A3D border, 12px radius, 32px padding
-  - Plan: "Free" — H2
-  - Price: "$0 / month" — Display, text-primary
-  - Features (checkmark list, text-secondary): 5 visuals, Microphone input, Basic playlists, Sonix watermark on recordings
-  - CTA: "Get Started" primary button, full width
-
-  Pro card: surface-elevated background, 1px rgba(124,92,252,0.5) border, purple glow, 12px radius, 32px padding
-  - "Most Popular" badge pill (primary accent bg, text-primary, 999px radius) — positioned top-right inside card
-  - Plan: "Pro" — H2
-  - Price: "$9 / month" — Display, text-primary
-  - Features (checkmark list, text-primary): Unlimited visuals, All audio sources, Unlimited playlists, AI visual generation (coming soon badge), No watermark, Priority support
-  - CTA: "Upgrade to Pro" primary button, full width
 
 - Footer uses Variant A with legal links visible and optional lightweight product links
 
@@ -471,7 +445,7 @@ Page content below nav, within layout grid, 80px top padding:
   - Intro body copy: "Sonix helps performers, streamers, and creators turn live audio into polished realtime visuals without building a custom VJ setup." — H3, text-secondary, 16px below title, max 760px
 - Story section, 48px below hero:
   - Two-column layout, 24px gap
-  - Left card: "What Sonix does" — H2 + body copy about connecting an audio source, choosing visuals, and saving playlists
+  - Left card: "What Sonix does" — H2 + body copy about connecting an audio source, choosing visuals, and saving favorites
   - Right card: "Why it exists" — H2 + body copy about reducing setup friction and focusing on a curated, reliable visual library
   - Both cards: surface background, 1px #2A2A3D border, 16px radius, 24px padding
 - Principles row, 48px below story section:
@@ -481,7 +455,7 @@ Page content below nav, within layout grid, 80px top padding:
 - Closing CTA section, 64px below principles:
   - H2: "Start with the free library"
   - Supporting copy in body text
-  - CTA row: "Get Started" primary + "View Pricing" ghost
+  - CTA: "Get Started" primary button
 
 ---
 
@@ -547,7 +521,7 @@ Ticker / visual marquee:
 - 28px height strip, full canvas width
 - Position: within canvas, pinned just above the bottom control bar overlay
 - Background: linear-gradient(to top, rgba(10,10,15,0.7), transparent)
-- Content: single-line scrolling text — "Aurora Wave  ●  Late Night Sessions  ●  Microphone — Built-in  ●  Now Playing"
+- Content: single-line scrolling text — "Aurora Wave  ●  Microphone — Built-in  ●  Now Playing"
 - Font: 12px / 400, text-secondary, letter-spacing 0.02em
 - Animation: continuous left-to-right marquee scroll at slow speed (60–80s full cycle); pauses on hover
 - Auto-hides with the control bar; visible whenever cursor moves
@@ -577,19 +551,7 @@ Control bar inner layout (24px outer padding, vertical center-aligned):
   - Favorite / heart (icon-only, 20px) — unfilled = not favorited; filled cyan = favorited; tooltip: "Favorite  [H]"
 
 - Right zone (~380px, right-aligned):
-  - Add to Playlist (+ icon-only, 20px) — tooltip: "Add to Playlist  [P]"; opens current playlist modal
-  - 12px gap
-  - Current Playlist dropdown: playlist icon + "Late Night Sessions" (body, text-primary, max 140px, truncate) + chevron-down; same button style as device dropdown; tooltip: "Current Playlist"; opens playlist modal
-  - 12px gap
   - Fullscreen (icon-only, 24px) — tooltip: "Fullscreen  [F]"
-
-Current playlist modal (opened from control bar):
-- Centered modal overlay, rgba(10,10,15,0.8) backdrop
-- Modal: 480px wide, surface-elevated background, 16px radius, 24px padding, 1px #2A2A3D border, purple glow
-- Header row: "Current Playlist" (H2) + close icon right-aligned
-- Active playlist row: "Late Night Sessions" (body/600) + "8 visuals" (caption, text-secondary) + 3px left border #7C5CFC
-- Scrollable visual list (max 320px height): each row 56px — thumbnail (64×36px, 8px radius) + visual name (body) + drag handle icon (far right)
-- Footer: "Manage Playlists →" ghost button (links to /playlists), left-aligned, 16px top margin
 
 Z-index layering (back to front):
 1. Canvas (#000000 background and visual content)
@@ -601,7 +563,7 @@ Z-index layering (back to front):
 
 Responsive notes:
 - Tablet: control bar stacks into two rows (row 1: playback center controls; row 2: device + sensitivity + right-zone icons); canvas scales to full available width
-- Phone: canvas is full screen; control bar auto-hides more aggressively; device selector and playlist collapse into a "···" more button
+- Phone: canvas is full screen; control bar auto-hides more aggressively; device selector collapses into a "···" more button
 
 ---
 
@@ -622,89 +584,32 @@ Page content below nav, 64px top padding, within layout grid (80px margins):
 - Each visual card (12px radius, surface background, 1px #2A2A3D border):
   - Thumbnail: 16:9, dark diagonal gradient placeholder (purple to cyan); 12px radius on top corners
   - Preview label: caption pill top-left of thumbnail (surface-elevated, text-secondary) — e.g., "Abstract"
-  - Premium lock overlay (free-tier users only): bottom-right corner of thumbnail — 28px circle, surface-elevated bg, lock icon in text-secondary; tooltip: "Upgrade to Pro to unlock"
-  - Card body (16px padding): visual name (body/600) + heart icon right-aligned; category pill 8px below name
+  - Card body (16px padding): visual name (body/600) + heart icon right-aligned (filled = favorited); category pill 8px below name
   - Card hover: surface-elevated bg, 1px rgba(124,92,252,0.4) border, purple glow; "Preview" primary button (small) centered over thumbnail as overlay
 - Pagination row at bottom: ← / 1  2  3 ... / → — centered, caption text, 48px vertical padding; current page pill in accent purple
 
 ---
 
-7. MY PLAYLISTS SCREEN  (authenticated, /playlists)
+7. MY FAVORITES SCREEN  (authenticated, /favorites)
 
 Nav: Variant C
 Footer: Variant C (default omitted)
 
-This is the user's personal playlist library.
+This is the user's personal library of favorited visuals.
 
 Page content below nav, 64px top padding, within layout grid:
-- Header row: "My Playlists" (H1, left) + "New Playlist" primary button (right)
+- Header row: "My Favorites" (H1, left)
 - 4-column grid 32px below header, 24px gap
-- Each playlist card (12px radius, surface background, 1px #2A2A3D border, 16px padding):
-  - Thumbnail area: 16:9 top, shows 2×2 collage of visual thumbnails (mini gradient previews) or single gradient if one visual; 12px radius top corners
-  - Card body: playlist name (body/600) + visual count "8 visuals" (caption, text-secondary) on same row + three-dot menu icon right-aligned
-  - "Active" pill (accent purple bg, #F0F0FF text) if this playlist is currently playing in the visualizer
-  - Card hover: surface-elevated bg, purple glow border
-- Lazy loading: "Load more" ghost button centered below the grid after initial 8 cards; auto-loads on scroll within the page
+- Each visual card (12px radius, surface background, 1px #2A2A3D border): identical style to Explore grid; filled heart icon indicates favorited state; unfavorite action on hover (heart icon toggles to remove)
+- Card hover: surface-elevated bg, purple glow border; heart icon tooltip: "Remove from Favorites"
+- Lazy loading: "Load more" ghost button centered below the grid after initial 8 cards; auto-loads on scroll
 
-Empty state (no playlists):
-- Centered: playlist icon (48px, text-secondary) + "No playlists yet" (H3) + "Start by exploring visuals and saving your favorites." (body, text-secondary) + "Explore Visuals" primary button
+Empty state (no favorites):
+- Centered: heart icon (48px, text-secondary) + "No favorites yet" (H3) + "Browse the visual library and heart the ones you love." (body, text-secondary) + "Explore Visuals" primary button
 
 ---
 
-8. PLAYLIST DETAIL SCREEN  (authenticated, /playlists/:id)
-
-Nav: Variant C
-Footer: Variant C (default omitted)
-
-Page content below nav, within layout grid, 48px top padding:
-- Playlist header row:
-  - Left: "Late Night Sessions" — H1
-  - Right: "Play All" primary button + "Edit" ghost button, 12px gap
-- Second row 8px below: playlist description (body, text-secondary) + "12 visuals" badge pill (surface-elevated, text-secondary), 16px gap
-- Divider: 1px #2A2A3D, 24px vertical margin
-
-Visual list:
-- Each row: 64px height, full width, bottom border 1px #2A2A3D
-- Row layout: thumbnail (80×45px, 8px radius) | visual name (body/600) + category pill | heart icon | drag handle (far right)
-- Sidebar interaction states apply to rows
-- Initial 8 rows shown; "Load more" ghost button below if more exist
-
-"Add Visuals" ghost button, left-aligned, 24px below last row
-
----
-
-9. PRICING PAGE  (public, /pricing)
-
-Nav: Variant A
-Footer: Variant A
-Background: subtle animated gradient (see ANIMATED BACKGROUNDS)
-
-- Page centered, max 960px wide, 96px top padding
-- Section label: "PRICING" — caption, text-secondary, letter-spacing 0.12em, centered
-- Page title: "Simple, honest pricing" — Display, centered, 12px below label
-- Page subtitle: "Start for free. Upgrade when you're ready to perform." — H3, text-secondary, centered, 16px below title
-- 48px below subtitle: two pricing cards side-by-side (same two-card layout as landing pricing preview but with expanded feature lists)
-
-Free card (expanded):
-- Surface bg, 1px #2A2A3D border, 12px radius, 32px padding
-- "Free" — H2; "$0 / month" — Display
-- Feature list with check icons (text-secondary): 5 visuals, Microphone input only, Basic playlists (up to 3), Standard sensitivity, "Sonix" watermark on any screen recording
-
-Pro card (expanded):
-- Surface-elevated bg, 1px rgba(124,92,252,0.5) border, purple glow, 12px radius, 32px padding
-- "Most Popular" badge pill (accent purple bg) at top-right inside card
-- "Pro" — H2; "$9 / month" — Display
-- Feature list with check icons (text-primary): Unlimited visuals, All audio input sources, Unlimited playlists, Shuffle & advanced playback, AI visual generation (coming soon — show a "Soon" badge pill), Custom sensitivity settings, No watermark, Priority support, Early access to new visuals
-
-FAQ accordion 80px below cards, full width (960px max), 3 items:
-- "Can I use Sonix with my DAW?"
-- "Does the Pro plan work on all devices?"
-- "Can I cancel anytime?"
-Each item: question in body/500, answer in body text-secondary, 1px bottom border #2A2A3D, chevron toggle icon right-aligned
-
----
-
-10. USER SETTINGS  (authenticated, /settings)
+8. USER SETTINGS  (authenticated, /settings)
 
 Nav: Variant C
 Footer: Variant C (default omitted)
@@ -714,7 +619,7 @@ Full-page layout (not modal). Standard page scroll.
 Two-column layout within layout grid, 48px top padding:
 - Left sidebar: 200px wide, surface background, 1px right border #2A2A3D, 24px padding
   - Section heading "Settings" — H3, 16px bottom margin
-  - Nav items (sidebar interaction states): Profile / Audio / Plan & Billing / Privacy
+  - Nav items (sidebar interaction states): Profile / Audio / Privacy
 - Main content panel: fills remaining width, 48px horizontal padding
 
 Profile section:
@@ -726,17 +631,12 @@ Audio section:
 - "Default Input Device" dropdown (same style as control bar device dropdown, full width)
 - "Default Sensitivity" slider (full-width range input, same style as control bar sensitivity)
 
-Plan & Billing section:
-- Current plan displayed: "Free" badge pill + "You're on the Free plan" (body)
-- Compact feature comparison: free vs. pro in a 2-column mini table
-- "Upgrade to Pro" primary button (large), full width, with purple glow, 24px top margin
-
 Privacy section:
 - "Delete Account" — destructive ghost button (1px #FF4D6D border, #FF4D6D text); clicking requires a confirmation modal
 
 ---
 
-11. PRIVACY PAGE  (public, /privacy)
+9. PRIVACY PAGE  (public, /privacy)
 
 Header treatment:
 - Do not use the public marketing nav
@@ -749,7 +649,7 @@ Page content:
 - Main document container: max 840px wide, centered, 64px top padding, 96px bottom padding
 - Title row: "Privacy Policy" — H1, text-primary
 - Meta line 8px below: "Last updated: April 1, 2026" — caption, text-secondary
-- Intro paragraph in body text explaining microphone access, account data, and playlist metadata at a high level
+- Intro paragraph in body text explaining microphone access, account data, and favorited visual metadata at a high level
 - Legal content sections stacked with 32px vertical spacing:
   - "What we collect"
   - "How audio permissions work"
@@ -760,7 +660,7 @@ Page content:
 
 ---
 
-12. TERMS PAGE  (public, /terms)
+10. TERMS PAGE  (public, /terms)
 
 Header treatment:
 - Do not use the public marketing nav
@@ -773,10 +673,9 @@ Page content:
 - Main document container: max 840px wide, centered, 64px top padding, 96px bottom padding
 - Title row: "Terms of Service" — H1, text-primary
 - Meta line 8px below: "Last updated: April 1, 2026" — caption, text-secondary
-- Intro paragraph summarizing account usage, subscriptions, and acceptable use
+- Intro paragraph summarizing account usage and acceptable use
 - Legal content sections stacked with 32px vertical spacing:
   - "Using Sonix"
-  - "Subscriptions and billing"
   - "Content and availability"
   - "Account termination"
   - "Contact"
@@ -784,7 +683,7 @@ Page content:
 
 ---
 
-13. ERROR / 404 PAGE  (public, /404)
+11. ERROR / 404 PAGE  (public, /404)
 
 Nav: Variant A
 Footer: Variant A
@@ -797,37 +696,23 @@ Footer: Variant A
 
 ---
 
-PAYWALL / TIER RULES
-
-Free tier limitations (apply consistently across all screens):
-- Visual library: only 5 visuals are accessible; the rest show a lock icon overlay on the card thumbnail
-- Lock overlay: bottom-right of thumbnail, 28px circle, surface-elevated bg, lock icon; tooltip: "Upgrade to Pro to unlock"
-- Locked visual cards are still visible and browsable — opacity 80%, no interactive hover states except the lock tooltip
-- User icon / nav: "Free" pill badge adjacent to username in Variant C nav and at top of user modal
-- No AI visual generation access (coming soon badge shown, but grayed out)
-
-Pro tier:
-- All visuals unlocked, no watermarks, all features active
-- "Pro" badge in accent purple shown in user modal top row and nav
-- "Upgrade to Pro" menu item hidden from user modal
-
----
-
 STRETCH FEATURES (represent in design as future/coming-soon states, not fully interactive)
 
-AI visual generation:
-- Accessible from Explore Visuals page as a special card at the top of the grid: "AI Visual Generation" card with a gradient purple/cyan thumbnail, "Pro" badge, "Coming Soon" overlay pill
-- Tooltip on hover: "Describe a visual and AI generates it live — available for Pro users soon"
+Demo mode timer:
+- Unauthenticated visitors can use the visualizer for 5–10 minutes; after the timer expires a "Sign up to continue" banner appears
+- Banner: full-width, surface-elevated background, 1px #2A2A3D border, pinned to the top of the canvas; body copy: "You've been visualizing for 5 minutes — sign up free to keep going."; CTA: "Sign Up" primary button + "Dismiss" ghost button (hides banner for a short interval before reappearing); does not block the canvas
+- Banner does not appear for authenticated users
 
-Premium visuals:
-- In the visual library, visuals tagged "Premium" show a star badge (accent purple, 12px) on the thumbnail corner in addition to the lock icon for free users
-- Premium badge visible even for Pro users to indicate exclusive/high-quality content
+Playlists (post-MVP):
+- Stub the "Add to Playlist" entry point in the control bar right zone as a disabled (+) icon button with tooltip "Add to Playlist — coming soon"
+- No playlist modal, no /playlists or /playlists/:id routes in MVP design
+
+AI visual generation:
+- Accessible from Explore Visuals page as a special card at the top of the grid: "AI Visual Generation" card with a gradient purple/cyan thumbnail, "Coming Soon" overlay pill
+- Tooltip on hover: "Describe a visual and AI generates it live — coming soon"
 
 Letters/reactive text (over stretch):
 - Represents real-time reactive typography — shown as a single visual card in the library labeled "Reactive Text" with a "Preview" button; no full design spec required
-
-Share playlist (over stretch):
-- "Share" icon button in Playlist Detail header row, right of "Edit" button; clicking shows a tooltip "Share playlist — coming soon" with a grayed disabled state
 
 Light theme / appearance toggle:
 - Do not implement as an active MVP control
@@ -838,16 +723,16 @@ Light theme / appearance toggle:
 TONE AND COPY RULES
 - Product name: always "Sonix" — capital S, lowercase remaining — never "SONIX" in body copy (only the wordmark uses all-caps styling)
 - Visual names (use these exact strings everywhere): "Aurora Wave", "Spectrum Pulse", "Deep Bass Bloom", "Neon Lattice", "Void Drift", "Solar Flare", "Crystal Echo", "Fractal Storm"
-- Playlist names: "Late Night Sessions", "Bass Heavy", "Ambient Drift"
+- Playlist names (for future reference / post-MVP): "Late Night Sessions", "Bass Heavy", "Ambient Drift" — do not display in MVP screens
 - No lorem ipsum anywhere — every text string must be plausible product copy
 - Username: "Alex Rivera" with a 32px circular avatar (gradient fill: #7C5CFC to #00E5FF)
-- Pricing copy must feel earnest and confident — not salesy; no exclamation marks
+- All copy must feel earnest and confident — not salesy; no exclamation marks
 - Hotkey tooltips format: "Action Label  [Key]" — one space between label and badge
 
 ---
 
 OUTPUT REQUIREMENT
-Generate all 13 screens as a single unified design file. Desktop dark-theme artboards are the required MVP artboards. All screens must be responsive — include layout notes or separate artboards for laptop (1280px), tablet (768px), and phone (375px). Do not generate active light-theme screens or an appearance toggle for the MVP. Every screen must use identical type sizes, identical component styles, and consistent color values. If any screen contradicts another, it is wrong.
+Generate all 11 screens as a single unified design file. Desktop dark-theme artboards are the required MVP artboards. All screens must be responsive — include layout notes or separate artboards for laptop (1280px), tablet (768px), and phone (375px). Do not generate active light-theme screens or an appearance toggle for the MVP. Every screen must use identical type sizes, identical component styles, and consistent color values. If any screen contradicts another, it is wrong.
 ```
 
 ## Why This Works Better Than Short Prompts
@@ -865,5 +750,5 @@ Generate all 13 screens as a single unified design file. Desktop dark-theme artb
 - Paywall rules are in a single `PAYWALL / TIER RULES` section that applies globally, rather than scattered per-screen.
 - Stretch features are represented as design states (coming-soon, locked, disabled) rather than omitted — keeping the design coherent without specifying unbuilt behavior.
 - Static pages list gives Stitch the full product map upfront so no screen exists in isolation.
-- Fixed copy strings (visual names, playlist names, username) prevent text drift across all 10 screens.
+- Fixed copy strings (visual names, username) prevent text drift across all 11 screens.
 - The output requirement at the end reinforces the constraints as the last thing read.

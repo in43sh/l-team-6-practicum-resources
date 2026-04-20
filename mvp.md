@@ -2,7 +2,7 @@
 
 ## Product Goal
 
-Sonix is a curated audio visualizer app. The MVP should let users sign in, connect a supported audio source, play reactive visuals, browse a visual library, and save visuals into playlists.
+Sonix is a curated audio visualizer app. The MVP should let users sign in, connect a supported audio source, play reactive visuals, browse a visual library, and save favorite visuals.
 
 ## Core User Flows
 
@@ -10,8 +10,7 @@ Sonix is a curated audio visualizer app. The MVP should let users sign in, conne
 2. Create an account or log in.
 3. Open the visualizer and connect an audio source.
 4. Switch between visuals and optionally enter fullscreen mode.
-5. Save favorite visuals into playlists.
-6. Return later to browse, manage, and replay saved playlists.
+5. Toggle a visual as a favorite; view saved favorites anytime.
 
 ## MVP Additional Documents
 
@@ -27,7 +26,7 @@ Sonix is a curated audio visualizer app. The MVP should let users sign in, conne
 - Build the app in React.
 - Include a public landing page and an authenticated user area.
 - Protect user-only routes with React Router and a JWT-backed `AuthRoute` pattern.
-- Track auth, audio device state, playback state, current visual, playlists, and favorites in client state.
+- Track auth, audio device state, playback state, current visual, and favorites in client state.
 
 ### Static Pages
 
@@ -38,14 +37,12 @@ The app contains the following routes:
 | `/` | Public | Landing page |
 | `/signup` | Public | Sign up |
 | `/login` | Public | Log in |
-| `/pricing` | Public | Pricing |
 | `/about` | Public | About Sonix |
 | `/privacy` | Public | Privacy policy |
 | `/terms` | Public | Terms of service |
 | `/visualizer` | Authenticated | Main visualizer |
 | `/explore` | Authenticated | Explore visuals / global library |
-| `/playlists` | Authenticated | My playlists |
-| `/playlists/:id` | Authenticated | Playlist detail |
+| `/favorites` | Authenticated | My favorited visuals |
 | `/settings` | Authenticated | User settings |
 | `/404` | Public | Error / not found |
 
@@ -61,18 +58,18 @@ The app contains the following routes:
 
 ### Navbar Variants
 
-The navbar content is context-aware and varies by page type. Do not use a single shared nav across all pages.
+The navbar stays as consistent as possible across all pages. Variants exist only where layout context strictly requires a difference (e.g., the visualizer canvas needs maximum space). For a fully distraction-free experience, users can enter fullscreen mode.
 
 | Variant | Pages | Content |
 | --- | --- | --- |
-| A — Public marketing | `/`, `/pricing`, `/about` | Logo lockup · center nav links (Features / Pricing / About) · Log In ghost + Sign Up primary |
+| A — Public marketing | `/`, `/about` | Logo lockup · center nav links (Features / About) · Log In ghost + Sign Up primary |
 | B — Public minimal | `/signup`, `/login` | Logo lockup only — no secondary nav |
-| C — Authenticated standard | `/explore`, `/playlists`, `/playlists/:id`, `/settings` | Logo lockup (links to `/visualizer`) · user avatar + name + plan badge + chevron (opens user modal) |
+| C — Authenticated standard | `/explore`, `/favorites`, `/settings` | Logo lockup (links to `/visualizer`) · user avatar + name + chevron (opens user modal) |
 | D — Visualizer minimal | `/visualizer` | Logo icon only (no wordmark) · hamburger (opens side drawer) · user avatar icon only |
 
 - Variant D is 48px tall; all others are 64px.
-- User modal (all authenticated variants): avatar, name, plan badge, Settings, Upgrade to Pro (free only), Keyboard Shortcuts, Log Out.
-- Hamburger side drawer (Variant D only): links to Visualizer / Explore / My Playlists / Settings.
+- User modal (all authenticated variants): avatar, name, Settings, Keyboard Shortcuts, Log Out.
+- Hamburger side drawer (Variant D only): links to Visualizer / Explore / My Favorites / Settings.
 
 ### Footer Variants
 
@@ -80,9 +77,9 @@ Footer behavior is also context-aware and can vary by page type. Do not use a si
 
 | Variant | Pages | Content |
 | --- | --- | --- |
-| A — Public site footer | `/`, `/pricing`, `/about`, `/404` | Legal links (`Privacy`, `Terms`) · optional lightweight product links |
+| A — Public site footer | `/`, `/about`, `/404` | Legal links (`Privacy`, `Terms`) · optional lightweight product links |
 | B — Public auth / legal footer | `/signup`, `/login`, `/privacy`, `/terms` | Minimal footer; legal links can remain visible where useful, but should not compete with the main form or legal content |
-| C — Authenticated app footer | `/explore`, `/playlists`, `/playlists/:id`, `/settings` | Optional compact app footer or no footer, depending on screen density |
+| C — Authenticated app footer | `/explore`, `/favorites`, `/settings` | Optional compact app footer or no footer, depending on screen density |
 | D — Visualizer immersive | `/visualizer` | No persistent marketing-style footer; preserve maximum canvas space and place secondary links inside drawers, menus, or overlays instead |
 
 ### Onboarding Tour
@@ -90,7 +87,7 @@ Footer behavior is also context-aware and can vary by page type. Do not use a si
 - Trigger automatically on first login only; skip on all subsequent visits (stored in user preferences).
 - Show only on the visualizer screen.
 - Full-screen semi-transparent overlay; spotlit element has a `#7C5CFC` ring.
-- Five steps targeting: device dropdown → play/pause button → Explore link → add-to-playlist button → fullscreen button.
+- Five steps targeting: device dropdown → play/pause button → Explore link → favorite (heart) button → fullscreen button.
 - Each tooltip card: title, body, progress dots, Next button, "Skip tour" link.
 
 ### All Screens Are Responsive
@@ -106,7 +103,6 @@ Footer behavior is also context-aware and can vary by page type. Do not use a si
 
 - Landing page hero: two slow-drifting radial gradient orbs (`#7C5CFC` top-right, `#00E5FF` bottom-left) at ~15% opacity — aurora breathing effect.
 - Login and Sign Up: subtle animated particle field (20–30 small dots drifting upward, low density).
-- Pricing: slow diagonal gradient shift between near-black values with a faint purple tint.
 - Reduced-motion fallback: static backgrounds, no animation.
 
 ### Keyboard Shortcuts (Desktop Only)
@@ -121,7 +117,6 @@ Keyboard shortcuts are only active on `/visualizer` in the MVP. Other pages may 
 | ← | Previous visual |
 | → | Next visual |
 | H | Toggle favorite |
-| P | Open current playlist modal |
 | D | Open device selector |
 | ? or K | Open keyboard shortcuts overlay |
 
@@ -137,7 +132,7 @@ Keyboard shortcuts are only active on `/visualizer` in the MVP. Other pages may 
 - Render visuals with `canvas` or Three.js.
 - Support microphone input in the MVP.
 - Treat virtual or system audio routing as desktop-preferred and browser-dependent.
-- Let users switch visuals, browse the library, add visuals to playlists, and use fullscreen mode.
+- Let users switch visuals, browse the library, favorite visuals, and use fullscreen mode.
 - Keyboard shortcuts are a desktop enhancement, not a required cross-device feature.
 
 ### Visualizer Screen Layout
@@ -168,34 +163,28 @@ The goal is to give maximum viewport area to the visualizer canvas. Remove all s
 
 - Left: audio input device dropdown (mic icon + device name + chevron) · sensitivity slider (replaces volume — 120px range slider, `#7C5CFC` thumb and filled track).
 - Center: shuffle · previous · play/pause (48px circle, primary accent, dominant control) · next · favorite (heart).
-- Right: add to playlist (+) · current playlist dropdown · fullscreen icon.
+- Right: fullscreen icon.
 
 **Additional canvas elements:**
 
-- Ticker / marquee: 28px strip pinned just above the control bar inside the canvas, scrolling text showing current visual name, playlist name, audio device, and playback status.
+- Ticker / marquee: 28px strip pinned just above the control bar inside the canvas, scrolling text showing current visual name, audio device, and playback status.
 - Hover watermark: bottom-left of canvas, appears on cursor hover outside the control bar zone, shows visual name, category pill, and short description.
 
 ### Explore Visuals Screen
 
 - Global visual library — all visuals across all tiers.
 - Filter row: search input, tag pills (All / Abstract / Reactive / Geometric / Fluid / Shader), sort dropdown.
-- 4-column card grid (desktop). Each card shows thumbnail, category pill, visual name, heart icon.
-- Premium visuals show a lock overlay for free users.
+- 4-column card grid (desktop). Each card shows thumbnail, category pill, visual name, heart icon (filled if favorited).
 - Pagination at the bottom.
 
-### My Playlists Screen
+### My Favorites Screen
 
-- User's personal playlist library.
-- 4-column card grid (desktop). Each card shows a 2×2 thumbnail collage, playlist name, visual count, three-dot menu. Active playlist shows an "Active" pill.
-- Lazy loading with a "Load more" button; auto-loads on scroll.
+- Simple grid of the user's favorited visuals (shader IDs stored on user profile).
+- 4-column card grid (desktop). Each card shows thumbnail, category pill, visual name, filled heart icon.
+- "Unfavorite" action available on each card (removes from list).
 - Empty state: icon + message + "Explore Visuals" CTA.
 
-### Paywall / Free vs. Pro
-
-- Free users: access to 5 visuals; remaining cards show a lock icon overlay.
-- "Free" pill badge shown next to username in nav and user modal.
-- Pro users: all visuals unlocked, no watermarks, unlimited playlists.
-- "Upgrade to Pro" menu item in user modal (free users only).
+> **Playlists are post-MVP.** The separate playlist API, playlist-user-shader associations, and CRUD flows are deferred. Favorites replace playlists for MVP: a simple array of shader IDs stored directly on the user profile.
 
 ### Device Capability Matrix
 
@@ -203,8 +192,7 @@ The goal is to give maximum viewport area to the visualizer canvas. Remove all s
 | --- | --- | --- | --- | --- |
 | Auth and account management | Full | Full | Full | Same core flow everywhere |
 | Visual library browsing | Full | Full | Full | Filters can collapse on smaller screens |
-| Playlist viewing | Full | Full | Full | List density can simplify on smaller screens |
-| Playlist editing and reordering | Full | Limited | Limited | Drag-and-drop can become edit mode |
+| Favorites (view/toggle) | Full | Full | Full | Simple heart toggle, no complex interactions |
 | Live visualizer playback | Full | Limited | Limited | Keep controls simpler on smaller screens |
 | Microphone input | Full | TBD | TBD | Needs browser and device testing |
 | Virtual/system audio input | Desktop-preferred | Not in MVP | Not in MVP | Browser and OS dependent |
@@ -213,8 +201,8 @@ The goal is to give maximum viewport area to the visualizer canvas. Remove all s
 
 ### Required UI States
 
-- Loading: auth checks, visual library fetch, playlist fetch, visualizer initialization
-- Empty: no playlists yet, no favorites yet, no visuals matching filters
+- Loading: auth checks, visual library fetch, favorites fetch, visualizer initialization
+- Empty: no favorites yet, no visuals matching filters
 - Permission: microphone access requested, denied, or previously blocked
 - Audio: no source connected, source disconnected, silent input, clipping or unstable input
 - Error: unsupported browser capability, failed visual load, failed save action
@@ -224,16 +212,15 @@ The goal is to give maximum viewport area to the visualizer canvas. Remove all s
 
 - Feature QA
   - [ ] Login/signup (happy + invalid flows)
-  - [ ] Auth route guard for /visualizer, /explore, /playlists, /settings
+  - [ ] Auth route guard for /visualizer, /explore, /favorites, /settings
   - [ ] Visualizer placeholder, mic grant/deny, controls, fullscreen
   - [ ] Explore filter/tags/search/pagination
-  - [ ] Playlist CRUD + add/remove visual + empty state
+  - [ ] Favorites toggle (add/remove) + empty state
 
 - API / Backend
   - [ ] Auth endpoints issue tokens and handle expiry
   - [ ] Visual list filters and pagination
-  - [ ] Playlist CRUD owner scope enforcement
-  - [ ] Favorites endpoint GET/POST/DELETE
+  - [ ] Favorites GET/POST/DELETE (stored as shader ID array on user profile)
   - [ ] 500 and network error UI fallback
 
 - Stability / Performance
@@ -256,13 +243,13 @@ The goal is to give maximum viewport area to the visualizer canvas. Remove all s
 
 - Observability
   - [ ] API and UI errors logged
-  - [ ] Analytics events for visual_play, playlist_create, plan_upgrade
+  - [ ] Analytics events for visual_play, favorite_add
   - [ ] Crash/failure tracking (Sentry or equivalent)
 
 - Regression
-  - [ ] E2E: signup -> visualizer -> save playlist -> logout
+  - [ ] E2E: signup -> visualizer -> favorite a visual -> logout
   - [ ] E2E: explore filter and visual view
-  - [ ] E2E: free user sees premium locks
+  - [ ] E2E: favorite toggle reflects correctly in /explore and /favorites
 
 - Deploy readiness
   - [ ] Env var config documented
@@ -276,16 +263,18 @@ The goal is to give maximum viewport area to the visualizer canvas. Remove all s
 
 - Use a Node.js backend with MongoDB.
 - Implement simple JWT-based authentication.
-- Define core data models for `Users`, `Playlists`, and `Visuals`.
+- Define core data models for `Users` and `Visuals`. Favorites are a simple array of shader IDs stored directly on the `User` document — no separate collection needed.
 - Add baseline security middleware such as CORS and Helmet.
 - Seed the selected curated visuals into the database.
 - Provide API documentation with Swagger or Postman.
 
 ### Suggested Backend Responsibilities
 
-- Persist user accounts, saved playlists, favorites, and visual metadata.
+- Persist user accounts, favorites (as a `favoriteIds` array on the user profile), and visual metadata.
 - Store curated visual metadata such as title, category, tags, source, and performance cost.
-- Expose APIs for auth, playlists, favorites, and visual browsing.
+- Expose APIs for auth, favorites, and visual browsing.
+
+> **Playlists are post-MVP.** Do not build a playlist API, playlist model, or playlist-user-shader associations for the initial release.
 
 ## Product Rules
 
@@ -296,16 +285,16 @@ The goal is to give maximum viewport area to the visualizer canvas. Remove all s
 
 ## Stretch Goals
 
-- AI visual generation — Pro plan only; appears in the Explore Visuals screen as a special card at the top of the grid with a "Coming Soon" overlay pill and a Pro badge. Tooltip: "Describe a visual and AI generates it live — available for Pro users soon." Hidden for free users in the card interactive state but still visible.
+- Demo mode timer — unauthenticated visitors can use the visualizer for 5–10 minutes before a "Sign up to continue" banner appears. Banner is non-blocking (can be dismissed temporarily) but reappears after another interval. Does not apply to logged-in users.
+- Playlists — post-MVP feature; separate API, playlist model, and playlist-user-shader associations. UI entry points (e.g., an "Add to Playlist" button) can be stubbed with a "Coming soon" tooltip.
+- AI visual generation — appears in the Explore Visuals screen as a special card at the top of the grid with a "Coming Soon" overlay pill. Tooltip: "Describe a visual and AI generates it live — coming soon."
 - Google and Facebook authentication
 - Light theme and appearance toggle
 - Shuffle playback
 - Visual library previews
 - Expanded Butterchurn libraries
-- Premium visuals requiring an upgraded account — shown with a star badge on the thumbnail corner in addition to the lock icon for free users
 - Reactive typography (letters that change background in real time) — represented as a single "Reactive Text" visual card in the library with a "Preview" button; no full feature spec required for MVP
 
 ## Over-Stretch Goals
 
-- Share playlist — UI representation: a disabled "Share" icon button in the Playlist Detail header (next to "Edit"), showing a tooltip "Share playlist — coming soon" on hover. Not interactive in MVP.
 - Custom background in visualizer

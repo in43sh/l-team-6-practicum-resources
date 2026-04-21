@@ -14,6 +14,8 @@ Sonix is a curated audio visualizer app. The MVP should let users sign in, conne
 
 ## MVP Additional Documents
 
+> These documents are not yet available. They will be added to `docs/` as the project progresses.
+
 - API spec: `api-spec.md`
 - Data models: `data-models.md`
 - Release checklist: `release-readiness.md`
@@ -38,15 +40,16 @@ The app contains the following routes:
 | `/signup` | Public | Sign up |
 | `/login` | Public | Log in |
 | `/about` | Public | About Sonix |
-| `/privacy` | Public | Privacy policy |
-| `/terms` | Public | Terms of service |
+| `/demo` | Public | Live visualizer demo _(not confirmed — may be added)_ |
+| `/privacy` | Public | Privacy policy _(not confirmed — may be deferred)_ |
+| `/terms` | Public | Terms of service _(not confirmed — may be deferred)_ |
 | `/visualizer` | Authenticated | Main visualizer |
 | `/explore` | Authenticated | Explore visuals / global library |
 | `/favorites` | Authenticated | My favorited visuals |
 | `/settings` | Authenticated | User settings |
 | `/404` | Public | Error / not found |
 
-- Public site pages should expose `Privacy` and `Terms` in the footer so the legal pages are always reachable.
+- If `/privacy` and `/terms` are confirmed, public site pages should expose them in the footer so the legal pages are always reachable.
 - `About` should remain part of the public marketing navigation rather than footer-only.
 
 ### Logo
@@ -56,7 +59,9 @@ The app contains the following routes:
 - Wordmark: "SONIX" in Inter 700, all caps, `#7C5CFC`, tracking 0.05em.
 - Use icon + wordmark on public pages and standard authenticated nav; icon only on the visualizer nav and as favicon.
 
-### Navbar Variants
+### Navbar Variants _(not confirmed — may be deferred)_
+
+> This feature is not confirmed for MVP. Specs below are preserved for reference if it moves forward.
 
 The navbar stays as consistent as possible across all pages. Variants exist only where layout context strictly requires a difference (e.g., the visualizer canvas needs maximum space). For a fully distraction-free experience, users can enter fullscreen mode.
 
@@ -68,21 +73,25 @@ The navbar stays as consistent as possible across all pages. Variants exist only
 | D — Visualizer minimal | `/visualizer` | Logo icon only (no wordmark) · hamburger (opens side drawer) · user avatar icon only |
 
 - Variant D is 48px tall; all others are 64px.
-- User modal (all authenticated variants): avatar, name, Settings, Keyboard Shortcuts, Log Out.
+- User modal (all authenticated variants): avatar, name, Settings, Log Out. _(Keyboard Shortcuts entry not confirmed.)_
 - Hamburger side drawer (Variant D only): links to Visualizer / Explore / My Favorites / Settings.
 
-### Footer Variants
+### Footer Variants _(not confirmed — may be deferred)_
+
+> This feature is not confirmed for MVP. Specs below are preserved for reference if it moves forward.
 
 Footer behavior is also context-aware and can vary by page type. Do not use a single shared footer across all routes.
 
 | Variant | Pages | Content |
 | --- | --- | --- |
-| A — Public site footer | `/`, `/about`, `/404` | Legal links (`Privacy`, `Terms`) · optional lightweight product links |
-| B — Public auth / legal footer | `/signup`, `/login`, `/privacy`, `/terms` | Minimal footer; legal links can remain visible where useful, but should not compete with the main form or legal content |
+| A — Public site footer | `/`, `/about`, `/404` | Optional legal links (`Privacy`, `Terms`) if those pages are confirmed · optional lightweight product links |
+| B — Public auth / legal footer | `/signup`, `/login`, `/privacy`\*, `/terms`\* | Minimal footer; legal links can remain visible where useful, but should not compete with the main form or legal content |
 | C — Authenticated app footer | `/explore`, `/favorites`, `/settings` | Optional compact app footer or no footer, depending on screen density |
 | D — Visualizer immersive | `/visualizer` | No persistent marketing-style footer; preserve maximum canvas space and place secondary links inside drawers, menus, or overlays instead |
 
-### Onboarding Tour
+### Onboarding Tour _(not confirmed — may be deferred)_
+
+> This feature is not confirmed for MVP. Specs below are preserved for reference if it moves forward.
 
 - Trigger automatically on first login only; skip on all subsequent visits (stored in user preferences).
 - Show only on the visualizer screen.
@@ -105,7 +114,9 @@ Footer behavior is also context-aware and can vary by page type. Do not use a si
 - Login and Sign Up: subtle animated particle field (20–30 small dots drifting upward, low density).
 - Reduced-motion fallback: static backgrounds, no animation.
 
-### Keyboard Shortcuts (Desktop Only)
+### Keyboard Shortcuts (Desktop Only)_(not confirmed — may be deferred)_
+
+> This feature is not confirmed for MVP. Specs below are preserved for reference if it moves forward.
 
 Keyboard shortcuts are only active on `/visualizer` in the MVP. Other pages may expose a "Keyboard Shortcuts" help entry, but should not bind the playback or visualizer control keys globally.
 
@@ -197,7 +208,7 @@ The goal is to give maximum viewport area to the visualizer canvas. Remove all s
 | Microphone input | Full | TBD | TBD | Needs browser and device testing |
 | Virtual/system audio input | Desktop-preferred | Not in MVP | Not in MVP | Browser and OS dependent |
 | Fullscreen immersive mode | Full | Limited | Limited | Device and browser behavior will vary |
-| Keyboard shortcuts | Full | Not in MVP | Not in MVP | Desktop convenience only |
+| Keyboard shortcuts | Not confirmed | Not in MVP | Not in MVP | Desktop convenience only — feature not confirmed |
 
 ### Required UI States
 
@@ -297,4 +308,4 @@ The goal is to give maximum viewport area to the visualizer canvas. Remove all s
 
 ## Over-Stretch Goals
 
-- Custom background in visualizer
+- Live streaming — broadcast the visualizer session to platforms such as Twitch or YouTube Live directly from the app

@@ -1,0 +1,651 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Sonix — Architecture Map</title>
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --panel: #14141d;
+    --panel-2: #1b1b27;
+    --border: #2a2a3a;
+    --text: #e6e6f0;
+    --muted: #8a8aa0;
+    --faint: #3a3a4d;
+    --accent: #7c5cfc;
+    --shadow: rgba(0,0,0,0.5);
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font: 14px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    overflow: hidden;
+  }
+  .app { display: grid; grid-template-columns: 300px 1fr; height: 100vh; }
+
+  /* ---- Side rail ---- */
+  .rail {
+    background: var(--panel);
+    border-right: 1px solid var(--border);
+    display: flex; flex-direction: column;
+    overflow: hidden;
+  }
+  .rail header { padding: 18px 18px 12px; border-bottom: 1px solid var(--border); }
+  .rail header h1 { margin: 0; font-size: 18px; letter-spacing: .5px; }
+  .rail header p { margin: 6px 0 0; color: var(--muted); font-size: 12px; }
+  .rail .scroll { overflow-y: auto; padding: 14px 12px; flex: 1; }
+  .section-label { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); margin: 4px 6px 8px; }
+
+  .flow-item {
+    border: 1px solid var(--border);
+    background: var(--panel-2);
+    border-radius: 8px;
+    padding: 10px 12px;
+    margin-bottom: 8px;
+    cursor: pointer;
+    transition: border-color .15s, background .15s, transform .05s;
+  }
+  .flow-item:hover { border-color: var(--accent); }
+  .flow-item:active { transform: translateY(1px); }
+  .flow-item.active { border-color: var(--accent); background: #221c3d; box-shadow: 0 0 0 1px var(--accent) inset; }
+  .flow-item .fname { font-weight: 600; }
+  .flow-item .fdesc { color: var(--muted); font-size: 12px; margin-top: 3px; }
+
+  .controls { padding: 10px 12px; border-top: 1px solid var(--border); display: flex; gap: 8px; }
+  .btn {
+    flex: 1; background: var(--panel-2); color: var(--text);
+    border: 1px solid var(--border); border-radius: 8px; padding: 9px 10px;
+    cursor: pointer; font-size: 13px;
+  }
+  .btn:hover { border-color: var(--accent); }
+
+  .legend { padding: 12px; border-top: 1px solid var(--border); display: flex; flex-wrap: wrap; gap: 6px 14px; }
+  .legend .item { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted); }
+  .legend .dot { width: 11px; height: 11px; border-radius: 3px; }
+
+  /* ---- Steps panel (collapsible bottom of rail) ---- */
+  .steps { border-top: 1px solid var(--border); max-height: 38%; overflow-y: auto; padding: 12px; display: none; }
+  .steps.show { display: block; }
+  .steps h2 { font-size: 13px; margin: 0 0 10px; }
+  .step { display: flex; gap: 10px; margin-bottom: 9px; }
+  .step .num {
+    flex: 0 0 22px; height: 22px; border-radius: 50%;
+    background: var(--accent); color: #fff; font-size: 12px; font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .step .body { font-size: 12px; }
+  .step .hop { color: var(--text); }
+  .step .hop b { color: #c9bcff; font-weight: 600; }
+  .step .lbl { color: var(--text); }
+  .step .det { color: var(--muted); margin-top: 2px; }
+
+  /* ---- Stage ---- */
+  .stage { position: relative; overflow: auto; padding: 28px; }
+  .stage-head { display: flex; align-items: baseline; gap: 14px; margin-bottom: 18px; }
+  .stage-head h2 { margin: 0; font-size: 16px; }
+  .stage-head .desc { color: var(--muted); font-size: 13px; }
+  .columns { display: flex; gap: 56px; align-items: flex-start; position: relative; z-index: 2; min-width: max-content; }
+  .col { display: flex; flex-direction: column; gap: 16px; width: 220px; }
+  .col > .col-title { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; padding-bottom: 6px; border-bottom: 2px solid; }
+
+  .node {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-left: 4px solid var(--faint);
+    border-radius: 9px;
+    padding: 10px 12px;
+    transition: opacity .18s, box-shadow .18s, transform .08s, border-color .18s;
+    position: relative;
+  }
+  .node .label { font-weight: 600; font-size: 13px; }
+  .node .path { color: var(--muted); font-size: 11px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; margin-top: 3px; word-break: break-all; }
+  .node .detail { color: var(--muted); font-size: 11.5px; margin-top: 5px; }
+  .node .badge {
+    position: absolute; top: -10px; left: -10px;
+    width: 22px; height: 22px; border-radius: 50%;
+    background: var(--accent); color: #fff; font-size: 12px; font-weight: 700;
+    display: none; align-items: center; justify-content: center;
+    box-shadow: 0 2px 6px var(--shadow); z-index: 5;
+  }
+  .node.dim { opacity: .22; }
+  .node.hot { box-shadow: 0 0 0 2px var(--accent), 0 6px 20px rgba(124,92,252,.25); border-left-color: var(--accent); }
+  .node.hot .badge { display: flex; }
+
+  /* SVG overlay for connectors */
+  svg.wires { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1; overflow: visible; }
+  .stage-inner { position: relative; }
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="rail">
+    <header>
+      <h1 id="proj-name">Sonix</h1>
+      <p id="proj-desc"></p>
+    </header>
+    <div class="scroll">
+      <div class="section-label">Flows</div>
+      <div id="flows"></div>
+    </div>
+    <div class="controls">
+      <button class="btn" id="clear-btn">Clear selection</button>
+    </div>
+    <div class="steps" id="steps">
+      <h2 id="steps-title"></h2>
+      <div id="steps-list"></div>
+    </div>
+    <div class="legend" id="legend"></div>
+  </aside>
+
+  <main class="stage" id="stage">
+    <div class="stage-head">
+      <h2 id="flow-title">Static architecture</h2>
+      <span class="desc" id="flow-desc">All components and their connections. Pick a flow to trace a path.</span>
+    </div>
+    <div class="stage-inner" id="stage-inner">
+      <svg class="wires" id="wires"></svg>
+      <div class="columns" id="columns"></div>
+    </div>
+  </main>
+</div>
+
+<script>
+/* ============================================================
+   Embedded architecture data (mirror of architecture.json).
+   ============================================================ */
+const DATA = {
+  "name": "Sonix",
+  "description": "Audio-reactive WebGL music visualizer. An Express 5 API serves a React SPA, persists data in MongoDB (Mongoose) with images/shaders in GridFS, and authenticates via a JWT in a signed httpOnly cookie. The browser captures mic audio, runs an FFT, and feeds it into a three.js GLSL shader.",
+  "categories": [
+    { "id": "actor", "label": "Actor", "color": "#e879b9" },
+    { "id": "client", "label": "Client (React SPA)", "color": "#38bdf8" },
+    { "id": "server", "label": "Server (Express)", "color": "#a78bfa" },
+    { "id": "data", "label": "Data (MongoDB)", "color": "#34d399" },
+    { "id": "external", "label": "External", "color": "#fbbf24" }
+  ],
+  "nodes": [
+    { "id": "user", "label": "Listener", "category": "actor", "detail": "Person in a browser who logs in, browses and plays audio-reactive visualizers." },
+
+    { "id": "spa", "label": "SPA Shell", "category": "client", "path": "frontend/src/App.tsx", "detail": "React Router routes; wrapped by AuthProvider + ToastProvider in main.tsx." },
+    { "id": "auth-provider", "label": "AuthProvider", "category": "client", "path": "frontend/src/context/AuthProvider.tsx", "detail": "Bootstraps session via GET /users/user; login/register/logout/updateProfile; gates routes." },
+    { "id": "login-page", "label": "Login / SignUp", "category": "client", "path": "frontend/src/pages/LoginPage.tsx", "detail": "Credential forms; calls AuthProvider.login / register." },
+    { "id": "explore-page", "label": "Explore Page", "category": "client", "path": "frontend/src/pages/ExplorePage.tsx", "detail": "Paginated, searchable, tag-filtered grid; save/unsave favorites." },
+    { "id": "player-page", "label": "Player Page", "category": "client", "path": "frontend/src/pages/PlayerPage.tsx", "detail": "Full-screen player for /visualizer/:id (protected); wires GLSL + mic + WebGL." },
+    { "id": "settings-page", "label": "Settings Page", "category": "client", "path": "frontend/src/pages/SettingsPage.tsx", "detail": "Profile, password, avatar upload, account delete." },
+    { "id": "api-client", "label": "apiFetch client", "category": "client", "path": "frontend/src/api/client.ts", "detail": "fetch wrapper with credentials:'include'; typed via @sonix/shared ApiEndpoints." },
+    { "id": "glsl-loader", "label": "GLSL Loader + Cache", "category": "client", "path": "frontend/src/hooks/usePreviewGlsl.ts", "detail": "Fetches visualizer GLSL (or demo), de-dupes requests, caches shader source." },
+    { "id": "audio-analyzer", "label": "Audio Analyzer", "category": "client", "path": "frontend/src/hooks/useAudioAnalyzer.ts", "detail": "getUserMedia → AnalyserNode (FFT 256); getAudioData() → Uint8Array frequency bins." },
+    { "id": "webgl-renderer", "label": "WebGL Renderer", "category": "client", "path": "frontend/src/hooks/useVisualizer.ts", "detail": "three.js ShaderMaterial (fragment = visualizer.glsl); rAF loop uploads audio into uAudio texture." },
+
+    { "id": "express-app", "label": "Express App", "category": "server", "path": "backend/src/app.ts", "detail": "rate-limit, json, helmet, cors(credentials), cookieParser(JWT_SECRET), morgan; mounts /api/v1; serves frontend/dist." },
+    { "id": "auth-route", "label": "Auth Route", "category": "server", "path": "backend/src/routes/auth.ts", "detail": "POST register/login/logout (controllers/auth.ts); per-route authLimiter." },
+    { "id": "visualizer-route", "label": "Visualizer Route", "category": "server", "path": "backend/src/routes/visualizer.ts", "detail": "GET / (list,public), /demo, /tags; GET /:id (full incl glsl, auth)." },
+    { "id": "user-route", "label": "User Route", "category": "server", "path": "backend/src/routes/user.ts", "detail": "All authenticated. Profile, password, collection get, POST/DELETE visuals/:id." },
+    { "id": "images-route", "label": "Images Route", "category": "server", "path": "backend/src/routes/images.ts", "detail": "POST/DELETE avatar (auth+multer), GET users/:id & visualizers/:id (public stream)." },
+    { "id": "auth-mw", "label": "auth middleware", "category": "server", "path": "backend/src/middleware/authentication.ts", "detail": "Reads signed cookie, jwt.verify, sets req.user; throws UnauthenticatedError otherwise." },
+    { "id": "upload-mw", "label": "upload middleware", "category": "server", "path": "backend/src/middleware/uploadImage.ts", "detail": "multer memoryStorage, 5MB limit, image mime-type filter." },
+    { "id": "jwt-util", "label": "JWT util", "category": "server", "path": "backend/src/utils/jwt.ts", "detail": "createJWT (sign) + attachCookiesToResponse (httpOnly, signed, sameSite strict)." },
+    { "id": "gridfs-util", "label": "GridFS util / imageStorage", "category": "server", "path": "backend/src/utils/gridfs.ts", "detail": "upload/delete/openDownloadStream over GridFSBucket. Buckets: images, shaders." },
+
+    { "id": "users-coll", "label": "users", "category": "data", "path": "backend/src/models/User.ts", "detail": "name, email(unique), bcrypt password, image ref; comparePassword + createJWT." },
+    { "id": "visualizers-coll", "label": "visualizers", "category": "data", "path": "backend/src/models/Visualizer.ts", "detail": "name, source, glsl, imageUrl ref, isDemo, tags[]. Seeded by scripts/seedVisualizers.ts." },
+    { "id": "uservisuals-coll", "label": "uservisuals", "category": "data", "path": "backend/src/models/UserVisual.ts", "detail": "userId+visualizerId join (unique compound index) = saved favorites." },
+    { "id": "images-coll", "label": "images", "category": "data", "path": "backend/src/models/Image.ts", "detail": "ownerType(user|visualizer)+ownerId (unique), fileId→GridFS, filename, contentType, size." },
+    { "id": "gridfs", "label": "GridFS buckets", "category": "data", "path": "MongoDB GridFS: images, shaders", "detail": "Binary file storage for avatars / visualizer images inside MongoDB." },
+
+    { "id": "mongodb", "label": "MongoDB Atlas", "category": "external", "path": "MONGO_URI (backend/src/db/connect.ts)", "detail": "Mongoose connection; sole datastore (collections + GridFS)." },
+    { "id": "web-audio", "label": "Web Audio / MediaDevices", "category": "external", "path": "Browser API", "detail": "getUserMedia + AudioContext/AnalyserNode — live mic capture + FFT." },
+    { "id": "render", "label": "Render", "category": "external", "path": "render.yaml", "detail": "Hosts the single Node web service; health check /api/v1/health; autoDeploy from dev." }
+  ],
+  "edges": [
+    { "from": "render", "to": "express-app", "label": "hosts" },
+    { "from": "user", "to": "spa", "label": "loads SPA" },
+    { "from": "express-app", "to": "spa", "label": "serves frontend/dist" },
+    { "from": "spa", "to": "auth-provider" },
+    { "from": "spa", "to": "login-page" },
+    { "from": "spa", "to": "explore-page" },
+    { "from": "spa", "to": "player-page" },
+    { "from": "spa", "to": "settings-page" },
+    { "from": "login-page", "to": "auth-provider" },
+    { "from": "auth-provider", "to": "api-client" },
+    { "from": "explore-page", "to": "api-client" },
+    { "from": "settings-page", "to": "api-client" },
+    { "from": "player-page", "to": "glsl-loader" },
+    { "from": "player-page", "to": "audio-analyzer" },
+    { "from": "player-page", "to": "webgl-renderer" },
+    { "from": "glsl-loader", "to": "api-client" },
+    { "from": "audio-analyzer", "to": "web-audio" },
+    { "from": "webgl-renderer", "to": "audio-analyzer", "label": "getAudioData()" },
+    { "from": "api-client", "to": "express-app", "label": "fetch (cookie)" },
+    { "from": "express-app", "to": "auth-route" },
+    { "from": "express-app", "to": "visualizer-route" },
+    { "from": "express-app", "to": "user-route" },
+    { "from": "express-app", "to": "images-route" },
+    { "from": "auth-route", "to": "jwt-util" },
+    { "from": "auth-route", "to": "users-coll" },
+    { "from": "visualizer-route", "to": "auth-mw" },
+    { "from": "visualizer-route", "to": "visualizers-coll" },
+    { "from": "user-route", "to": "auth-mw" },
+    { "from": "user-route", "to": "users-coll" },
+    { "from": "user-route", "to": "uservisuals-coll" },
+    { "from": "images-route", "to": "auth-mw" },
+    { "from": "images-route", "to": "upload-mw" },
+    { "from": "images-route", "to": "images-coll" },
+    { "from": "images-route", "to": "gridfs-util" },
+    { "from": "gridfs-util", "to": "gridfs" },
+    { "from": "users-coll", "to": "mongodb" },
+    { "from": "visualizers-coll", "to": "mongodb" },
+    { "from": "uservisuals-coll", "to": "mongodb" },
+    { "from": "images-coll", "to": "mongodb" },
+    { "from": "gridfs", "to": "mongodb" }
+  ],
+  "flows": [
+    {
+      "id": "play-visualizer",
+      "name": "Play visualizer (audio → GLSL → GPU)",
+      "description": "Load a visualizer's GLSL, capture mic audio, FFT it, and drive the three.js fragment shader every frame.",
+      "steps": [
+        { "from": "user", "to": "player-page", "label": "Open /visualizer/:id", "detail": "ProtectedRoute requires a session." },
+        { "from": "player-page", "to": "glsl-loader", "label": "usePlayerGlsl(id)", "detail": "hooks/usePlayerGlsl.ts → loadVisualizerGlsl" },
+        { "from": "glsl-loader", "to": "api-client", "label": "getVisualizer(id)", "detail": "api/visualizers.ts" },
+        { "from": "api-client", "to": "express-app", "label": "GET /api/v1/visualizers/:id", "detail": "sends signed JWT cookie" },
+        { "from": "express-app", "to": "visualizer-route", "label": "route match", "detail": "getVisualizerById" },
+        { "from": "visualizer-route", "to": "auth-mw", "label": "authenticateUser", "detail": "verify signedCookies.token" },
+        { "from": "visualizer-route", "to": "visualizers-coll", "label": "Visualizer.findById", "detail": "full doc incl glsl" },
+        { "from": "visualizers-coll", "to": "mongodb", "label": "read document" },
+        { "from": "visualizer-route", "to": "glsl-loader", "label": "200 { data: { glsl } }", "detail": "cached in glslCache" },
+        { "from": "player-page", "to": "audio-analyzer", "label": "useAudioAnalyzer()", "detail": "connect microphone" },
+        { "from": "audio-analyzer", "to": "web-audio", "label": "getUserMedia + AnalyserNode", "detail": "FFT 256 → 128 bins" },
+        { "from": "player-page", "to": "webgl-renderer", "label": "useVisualizer(canvas, glsl, getAudioData)", "detail": "hooks/useVisualizer.ts" },
+        { "from": "webgl-renderer", "to": "audio-analyzer", "label": "getAudioData() per frame", "detail": "Uint8Array → uAudio DataTexture" },
+        { "from": "webgl-renderer", "to": "user", "label": "render to canvas", "detail": "rAF loop; uTime/uResolution/uAudio uniforms" }
+      ]
+    },
+    {
+      "id": "login",
+      "name": "Log in",
+      "description": "Authenticate credentials and receive a JWT in a signed httpOnly cookie.",
+      "steps": [
+        { "from": "user", "to": "login-page", "label": "Submit email + password" },
+        { "from": "login-page", "to": "auth-provider", "label": "login(email, password)", "detail": "context/AuthProvider.tsx" },
+        { "from": "auth-provider", "to": "express-app", "label": "POST /api/v1/auth/login", "detail": "fetch credentials:'include'" },
+        { "from": "express-app", "to": "auth-route", "label": "route + authLimiter", "detail": "20 req / 15 min prod" },
+        { "from": "auth-route", "to": "users-coll", "label": "User.findOne + comparePassword", "detail": "bcrypt.compare" },
+        { "from": "users-coll", "to": "mongodb", "label": "read user" },
+        { "from": "auth-route", "to": "jwt-util", "label": "createJWT + attachCookies", "detail": "utils/jwt.ts" },
+        { "from": "jwt-util", "to": "user", "label": "Set-Cookie token", "detail": "httpOnly, signed, sameSite strict" },
+        { "from": "auth-route", "to": "auth-provider", "label": "200 { data: user }", "detail": "setUser → unlock routes" }
+      ]
+    },
+    {
+      "id": "explore",
+      "name": "Browse / Explore",
+      "description": "Paginated, searchable, tag-filtered list of visualizers (glsl excluded).",
+      "steps": [
+        { "from": "user", "to": "explore-page", "label": "Open /explore, search / pick tag" },
+        { "from": "explore-page", "to": "api-client", "label": "listVisualizers({search,tag,page})", "detail": "api/visualizers.ts" },
+        { "from": "api-client", "to": "express-app", "label": "GET /api/v1/visualizers?search&tag&page" },
+        { "from": "express-app", "to": "visualizer-route", "label": "getAllVisualizers (public)" },
+        { "from": "visualizer-route", "to": "visualizers-coll", "label": "find.select(-glsl).skip.limit + count", "detail": "limit cap 50, $regex name, tag match" },
+        { "from": "visualizers-coll", "to": "mongodb", "label": "paginated read" },
+        { "from": "visualizer-route", "to": "explore-page", "label": "200 { data, total, page, pages }" }
+      ]
+    },
+    {
+      "id": "save-favorite",
+      "name": "Save favorite",
+      "description": "Add a visualizer to the signed-in user's collection.",
+      "steps": [
+        { "from": "user", "to": "explore-page", "label": "Click save on a card", "detail": "hooks/useFavoriteVisual.ts" },
+        { "from": "explore-page", "to": "api-client", "label": "addVisualToCollection(id)" },
+        { "from": "api-client", "to": "express-app", "label": "POST /api/v1/users/current/visuals/:id" },
+        { "from": "express-app", "to": "user-route", "label": "router.use(authenticateUser)" },
+        { "from": "user-route", "to": "auth-mw", "label": "verify JWT cookie" },
+        { "from": "user-route", "to": "uservisuals-coll", "label": "UserVisual.create", "detail": "unique (userId,visualizerId)" },
+        { "from": "uservisuals-coll", "to": "mongodb", "label": "insert join doc" },
+        { "from": "user-route", "to": "explore-page", "label": "201 saved" }
+      ]
+    },
+    {
+      "id": "upload-avatar",
+      "name": "Upload avatar",
+      "description": "Store a user image in GridFS and link it on the User document.",
+      "steps": [
+        { "from": "user", "to": "settings-page", "label": "Choose image file" },
+        { "from": "settings-page", "to": "api-client", "label": "uploadAvatar(FormData)", "detail": "api/images.ts" },
+        { "from": "api-client", "to": "express-app", "label": "POST /api/v1/images/users/user" },
+        { "from": "express-app", "to": "images-route", "label": "route match" },
+        { "from": "images-route", "to": "auth-mw", "label": "authenticateUser" },
+        { "from": "images-route", "to": "upload-mw", "label": "multer single('image')", "detail": "5MB + mime validation" },
+        { "from": "images-route", "to": "gridfs-util", "label": "uploadBufferToGridFS('images')", "detail": "old file deleted if replacing" },
+        { "from": "gridfs-util", "to": "gridfs", "label": "write file stream" },
+        { "from": "images-route", "to": "images-coll", "label": "Image.findOneAndUpdate upsert", "detail": "User.image set to image._id" },
+        { "from": "images-coll", "to": "mongodb", "label": "upsert metadata" },
+        { "from": "images-route", "to": "settings-page", "label": "200 { imageId }" }
+      ]
+    },
+    {
+      "id": "serve-image",
+      "name": "Serve image",
+      "description": "Stream an image binary out of GridFS to an <img> tag (public).",
+      "steps": [
+        { "from": "user", "to": "express-app", "label": "<img> GET /api/v1/images/visualizers/:id" },
+        { "from": "express-app", "to": "images-route", "label": "getVisualizerImage (public)" },
+        { "from": "images-route", "to": "images-coll", "label": "Image.findOne(ownerType,ownerId)" },
+        { "from": "images-coll", "to": "mongodb", "label": "read metadata (fileId, contentType)" },
+        { "from": "images-route", "to": "gridfs-util", "label": "openGridFSDownloadStream(fileId)" },
+        { "from": "gridfs-util", "to": "gridfs", "label": "open download stream" },
+        { "from": "images-route", "to": "user", "label": "pipe stream → response", "detail": "Content-Type from metadata" }
+      ]
+    }
+  ],
+  "meta": {
+    "generatedAt": "2026-06-01",
+    "sourceCommit": "2cd17efb8f7fbad62cb0f961ceca369b5f73e5ed",
+    "notes": "Verified against the repo at the above commit. Unused PostgreSQL scaffold omitted. Default flow: play-visualizer."
+  }
+};
+
+const DEFAULT_FLOW = "play-visualizer";
+
+/* ============================================================
+   Rendering
+   ============================================================ */
+const nodeById = Object.fromEntries(DATA.nodes.map(n => [n.id, n]));
+const catById = Object.fromEntries(DATA.categories.map(c => [c.id, c]));
+const nodeEls = {};
+let activeFlowId = null;
+
+document.getElementById("proj-name").textContent = DATA.name;
+document.getElementById("proj-desc").textContent = DATA.description;
+
+/* ---- Columns + nodes ---- */
+const columnsEl = document.getElementById("columns");
+DATA.categories.forEach(cat => {
+  const col = document.createElement("div");
+  col.className = "col";
+  const title = document.createElement("div");
+  title.className = "col-title";
+  title.textContent = cat.label;
+  title.style.color = cat.color;
+  title.style.borderBottomColor = cat.color;
+  col.appendChild(title);
+
+  DATA.nodes.filter(n => n.category === cat.id).forEach(n => {
+    const el = document.createElement("div");
+    el.className = "node";
+    el.style.borderLeftColor = cat.color;
+    el.dataset.id = n.id;
+
+    const badge = document.createElement("div");
+    badge.className = "badge";
+    el.appendChild(badge);
+
+    const label = document.createElement("div");
+    label.className = "label";
+    label.textContent = n.label;
+    el.appendChild(label);
+
+    if (n.path) {
+      const p = document.createElement("div");
+      p.className = "path";
+      p.textContent = n.path;
+      el.appendChild(p);
+    }
+    if (n.detail) {
+      const d = document.createElement("div");
+      d.className = "detail";
+      d.textContent = n.detail;
+      el.appendChild(d);
+    }
+    col.appendChild(el);
+    nodeEls[n.id] = el;
+  });
+  columnsEl.appendChild(col);
+});
+
+/* ---- Legend ---- */
+const legendEl = document.getElementById("legend");
+DATA.categories.forEach(cat => {
+  const item = document.createElement("div");
+  item.className = "item";
+  item.innerHTML = `<span class="dot" style="background:${cat.color}"></span>${cat.label}`;
+  legendEl.appendChild(item);
+});
+
+/* ---- Flow rail ---- */
+const flowsEl = document.getElementById("flows");
+DATA.flows.forEach(flow => {
+  const item = document.createElement("div");
+  item.className = "flow-item";
+  item.dataset.flow = flow.id;
+  item.innerHTML = `<div class="fname">${flow.name}</div><div class="fdesc">${flow.description}</div>`;
+  item.addEventListener("click", () => selectFlow(flow.id));
+  flowsEl.appendChild(item);
+});
+
+document.getElementById("clear-btn").addEventListener("click", clearSelection);
+
+/* ============================================================
+   SVG wiring
+   ============================================================ */
+const svg = document.getElementById("wires");
+const SVGNS = "http://www.w3.org/2000/svg";
+
+function ensureDefs() {
+  if (svg.querySelector("defs")) return;
+  const defs = document.createElementNS(SVGNS, "defs");
+  defs.innerHTML = `
+    <marker id="arrow-faint" markerWidth="7" markerHeight="7" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L6,3 L0,6 Z" fill="#3a3a4d"></path>
+    </marker>
+    <marker id="arrow-hot" markerWidth="8" markerHeight="8" refX="6.5" refY="3.5" orient="auto">
+      <path d="M0,0 L7,3.5 L0,7 Z" fill="#7c5cfc"></path>
+    </marker>`;
+  svg.appendChild(defs);
+}
+
+function centerOf(el, container) {
+  const r = el.getBoundingClientRect();
+  const c = container.getBoundingClientRect();
+  return {
+    left: r.left - c.left, right: r.right - c.left,
+    top: r.top - c.top, bottom: r.bottom - c.top,
+    cx: r.left - c.left + r.width / 2,
+    cy: r.top - c.top + r.height / 2,
+    w: r.width, h: r.height
+  };
+}
+
+/* Anchor on the side facing the target, so wires leave/enter cleanly. */
+function anchor(a, b) {
+  const dx = b.cx - a.cx;
+  if (Math.abs(dx) < 8) {
+    return a.cy < b.cy ? { x: a.cx, y: a.bottom } : { x: a.cx, y: a.top };
+  }
+  return dx > 0 ? { x: a.right, y: a.cy } : { x: a.left, y: a.cy };
+}
+
+function pathD(p1, p2) {
+  const dx = p2.x - p1.x;
+  const c = Math.max(28, Math.abs(dx) * 0.45);
+  // horizontal-biased cubic bezier
+  const c1x = p1.x + (dx >= 0 ? c : -c);
+  const c2x = p2.x - (dx >= 0 ? c : -c);
+  return `M ${p1.x},${p1.y} C ${c1x},${p1.y} ${c2x},${p2.y} ${p2.x},${p2.y}`;
+}
+
+function draw() {
+  ensureDefs();
+  // clear everything except defs
+  [...svg.querySelectorAll("path.wire, g.steplabel")].forEach(n => n.remove());
+  const container = document.getElementById("stage-inner");
+  svg.setAttribute("width", container.scrollWidth);
+  svg.setAttribute("height", container.scrollHeight);
+
+  if (activeFlowId) {
+    drawFlow(activeFlowId, container);
+  } else {
+    drawStatic(container);
+  }
+}
+
+function drawStatic(container) {
+  DATA.edges.forEach(e => {
+    const a = nodeEls[e.from], b = nodeEls[e.to];
+    if (!a || !b) return;
+    const ga = centerOf(a, container), gb = centerOf(b, container);
+    const p1 = anchor(ga, gb), p2 = anchor(gb, ga);
+    const path = document.createElementNS(SVGNS, "path");
+    path.setAttribute("class", "wire");
+    path.setAttribute("d", pathD(p1, p2));
+    path.setAttribute("fill", "none");
+    path.setAttribute("stroke", "#2a2a3a");
+    path.setAttribute("stroke-width", "1.3");
+    path.setAttribute("marker-end", "url(#arrow-faint)");
+    svg.appendChild(path);
+  });
+}
+
+function drawFlow(flowId, container) {
+  const flow = DATA.flows.find(f => f.id === flowId);
+  if (!flow) return;
+
+  // faint static backdrop
+  DATA.edges.forEach(e => {
+    const a = nodeEls[e.from], b = nodeEls[e.to];
+    if (!a || !b) return;
+    const ga = centerOf(a, container), gb = centerOf(b, container);
+    const p1 = anchor(ga, gb), p2 = anchor(gb, ga);
+    const path = document.createElementNS(SVGNS, "path");
+    path.setAttribute("class", "wire");
+    path.setAttribute("d", pathD(p1, p2));
+    path.setAttribute("fill", "none");
+    path.setAttribute("stroke", "#1f1f2b");
+    path.setAttribute("stroke-width", "1");
+    svg.appendChild(path);
+  });
+
+  // highlighted ordered steps
+  flow.steps.forEach((step, i) => {
+    const a = nodeEls[step.from], b = nodeEls[step.to];
+    if (!a || !b) return;
+    const ga = centerOf(a, container), gb = centerOf(b, container);
+    const p1 = anchor(ga, gb), p2 = anchor(gb, ga);
+    const path = document.createElementNS(SVGNS, "path");
+    path.setAttribute("class", "wire");
+    path.setAttribute("d", pathD(p1, p2));
+    path.setAttribute("fill", "none");
+    path.setAttribute("stroke", "#7c5cfc");
+    path.setAttribute("stroke-width", "2.2");
+    path.setAttribute("marker-end", "url(#arrow-hot)");
+    path.setAttribute("opacity", "0.95");
+    svg.appendChild(path);
+
+    // numbered chip at the midpoint of the connector
+    const mx = (p1.x + p2.x) / 2;
+    const my = (p1.y + p2.y) / 2;
+    const g = document.createElementNS(SVGNS, "g");
+    g.setAttribute("class", "steplabel");
+    const circ = document.createElementNS(SVGNS, "circle");
+    circ.setAttribute("cx", mx); circ.setAttribute("cy", my); circ.setAttribute("r", "10");
+    circ.setAttribute("fill", "#7c5cfc");
+    circ.setAttribute("stroke", "#0a0a0f"); circ.setAttribute("stroke-width", "2");
+    const txt = document.createElementNS(SVGNS, "text");
+    txt.setAttribute("x", mx); txt.setAttribute("y", my + 0.5);
+    txt.setAttribute("fill", "#fff"); txt.setAttribute("font-size", "11");
+    txt.setAttribute("font-weight", "700");
+    txt.setAttribute("text-anchor", "middle"); txt.setAttribute("dominant-baseline", "central");
+    txt.textContent = String(i + 1);
+    g.appendChild(circ); g.appendChild(txt);
+    svg.appendChild(g);
+  });
+}
+
+/* ============================================================
+   Selection state
+   ============================================================ */
+function selectFlow(flowId) {
+  activeFlowId = flowId;
+  const flow = DATA.flows.find(f => f.id === flowId);
+
+  // rail active state
+  document.querySelectorAll(".flow-item").forEach(el =>
+    el.classList.toggle("active", el.dataset.flow === flowId));
+
+  // node highlight: collect ids + first-touch order for badges
+  const touched = [];
+  flow.steps.forEach(s => { [s.from, s.to].forEach(id => { if (!touched.includes(id)) touched.push(id); }); });
+
+  Object.entries(nodeEls).forEach(([id, el]) => {
+    const inFlow = touched.includes(id);
+    el.classList.toggle("hot", inFlow);
+    el.classList.toggle("dim", !inFlow);
+    const badge = el.querySelector(".badge");
+    const order = touched.indexOf(id);
+    badge.textContent = order >= 0 ? String(order + 1) : "";
+  });
+
+  // header
+  document.getElementById("flow-title").textContent = flow.name;
+  document.getElementById("flow-desc").textContent = flow.description;
+
+  // steps panel
+  renderSteps(flow);
+  draw();
+}
+
+function renderSteps(flow) {
+  const panel = document.getElementById("steps");
+  panel.classList.add("show");
+  document.getElementById("steps-title").textContent = "Steps — " + flow.name;
+  const list = document.getElementById("steps-list");
+  list.innerHTML = "";
+  flow.steps.forEach((s, i) => {
+    const from = nodeById[s.from]?.label ?? s.from;
+    const to = nodeById[s.to]?.label ?? s.to;
+    const row = document.createElement("div");
+    row.className = "step";
+    row.innerHTML = `
+      <div class="num">${i + 1}</div>
+      <div class="body">
+        <div class="hop"><b>${from}</b> → <b>${to}</b></div>
+        <div class="lbl">${s.label ?? ""}</div>
+        ${s.detail ? `<div class="det">${s.detail}</div>` : ""}
+      </div>`;
+    list.appendChild(row);
+  });
+}
+
+function clearSelection() {
+  activeFlowId = null;
+  document.querySelectorAll(".flow-item").forEach(el => el.classList.remove("active"));
+  Object.values(nodeEls).forEach(el => {
+    el.classList.remove("hot", "dim");
+    el.querySelector(".badge").textContent = "";
+  });
+  document.getElementById("flow-title").textContent = "Static architecture";
+  document.getElementById("flow-desc").textContent =
+    "All components and their connections. Pick a flow to trace a path.";
+  document.getElementById("steps").classList.remove("show");
+  draw();
+}
+
+/* ---- Lifecycle ---- */
+window.addEventListener("resize", draw);
+document.getElementById("stage").addEventListener("scroll", draw);
+
+// initial paint (after layout settles) + default flow
+requestAnimationFrame(() => {
+  if (DEFAULT_FLOW && DATA.flows.some(f => f.id === DEFAULT_FLOW)) {
+    selectFlow(DEFAULT_FLOW);
+  } else {
+    draw();
+  }
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,192 @@
+{
+  "name": "Sonix",
+  "description": "Audio-reactive WebGL music visualizer. An npm-workspaces monorepo (shared/backend/frontend): an Express 5 API serves a React SPA, persists data in MongoDB (Mongoose) with images/shaders in GridFS, and authenticates via a JWT carried in a signed httpOnly cookie. The browser captures microphone audio, runs an FFT, and feeds the frequency data into a three.js GLSL shader rendered on a canvas.",
+  "categories": [
+    { "id": "actor", "label": "Actor", "color": "#e879b9" },
+    { "id": "client", "label": "Client (React SPA)", "color": "#38bdf8" },
+    { "id": "server", "label": "Server (Express)", "color": "#a78bfa" },
+    { "id": "data", "label": "Data (MongoDB)", "color": "#34d399" },
+    { "id": "external", "label": "External", "color": "#fbbf24" }
+  ],
+  "nodes": [
+    { "id": "user", "label": "Listener", "category": "actor", "detail": "Person in a browser who logs in, browses and plays audio-reactive visualizers." },
+
+    { "id": "spa", "label": "SPA Shell", "category": "client", "path": "frontend/src/App.tsx", "detail": "React Router routes; wrapped by AuthProvider + ToastProvider in main.tsx." },
+    { "id": "auth-provider", "label": "AuthProvider", "category": "client", "path": "frontend/src/context/AuthProvider.tsx", "detail": "Bootstraps session via GET /users/user; exposes login/register/logout/updateProfile; gates Protected/Guest routes." },
+    { "id": "login-page", "label": "Login / SignUp", "category": "client", "path": "frontend/src/pages/LoginPage.tsx", "detail": "Credential forms; calls AuthProvider.login / register." },
+    { "id": "explore-page", "label": "Explore Page", "category": "client", "path": "frontend/src/pages/ExplorePage.tsx", "detail": "Paginated, searchable, tag-filtered grid of visualizer cards; save/unsave favorites." },
+    { "id": "player-page", "label": "Player Page", "category": "client", "path": "frontend/src/pages/PlayerPage.tsx", "detail": "Full-screen player for /visualizer/:id (protected); wires GLSL + mic audio + WebGL." },
+    { "id": "settings-page", "label": "Settings Page", "category": "client", "path": "frontend/src/pages/SettingsPage.tsx", "detail": "Profile, password, avatar upload, account delete." },
+    { "id": "api-client", "label": "apiFetch client", "category": "client", "path": "frontend/src/api/client.ts", "detail": "fetch wrapper with credentials:'include'; typed via @sonix/shared ApiEndpoints." },
+    { "id": "glsl-loader", "label": "GLSL Loader + Cache", "category": "client", "path": "frontend/src/hooks/usePreviewGlsl.ts", "detail": "Fetches visualizer GLSL (or demo), de-dupes in-flight requests, caches shader source. Consumed by usePlayerGlsl.ts." },
+    { "id": "audio-analyzer", "label": "Audio Analyzer", "category": "client", "path": "frontend/src/hooks/useAudioAnalyzer.ts", "detail": "getUserMedia → AudioContext → AnalyserNode (FFT 256); getAudioData() returns Uint8Array of frequency bins." },
+    { "id": "webgl-renderer", "label": "WebGL Renderer", "category": "client", "path": "frontend/src/hooks/useVisualizer.ts", "detail": "three.js ShaderMaterial (fragmentShader = visualizer.glsl); requestAnimationFrame loop uploads audio Uint8Array into uAudio DataTexture." },
+
+    { "id": "express-app", "label": "Express App", "category": "server", "path": "backend/src/app.ts", "detail": "Middleware chain: rate-limit, json, helmet, cors(credentials), cookieParser(JWT_SECRET), morgan; mounts /api/v1 routers; serves built SPA from frontend/dist." },
+    { "id": "auth-route", "label": "Auth Route", "category": "server", "path": "backend/src/routes/auth.ts", "detail": "POST register/login/logout (controllers/auth.ts); per-route authLimiter." },
+    { "id": "visualizer-route", "label": "Visualizer Route", "category": "server", "path": "backend/src/routes/visualizer.ts", "detail": "GET / (list, public), /demo, /tags; GET /:id (full incl glsl, auth required). controllers/visualizer.ts." },
+    { "id": "user-route", "label": "User Route", "category": "server", "path": "backend/src/routes/user.ts", "detail": "All authenticated. Profile get/patch/delete, password, GET collection, POST/DELETE visuals/:id. controllers/user.ts." },
+    { "id": "images-route", "label": "Images Route", "category": "server", "path": "backend/src/routes/images.ts", "detail": "POST/DELETE user avatar (auth+multer), GET users/:id and visualizers/:id (public stream). controllers/images.ts." },
+    { "id": "auth-mw", "label": "auth middleware", "category": "server", "path": "backend/src/middleware/authentication.ts", "detail": "Reads req.signedCookies.token, jwt.verify with JWT_SECRET, sets req.user; throws UnauthenticatedError otherwise." },
+    { "id": "upload-mw", "label": "upload middleware", "category": "server", "path": "backend/src/middleware/uploadImage.ts", "detail": "multer memoryStorage, 5MB limit, image mime-type filter (utils/imageValidation.ts)." },
+    { "id": "jwt-util", "label": "JWT util", "category": "server", "path": "backend/src/utils/jwt.ts", "detail": "createJWT (sign w/ JWT_LIFETIME) + attachCookiesToResponse (httpOnly, signed, sameSite strict)." },
+    { "id": "gridfs-util", "label": "GridFS util / imageStorage", "category": "server", "path": "backend/src/utils/gridfs.ts", "detail": "upload/delete/openDownloadStream over GridFSBucket; wrapped by services/imageStorage.ts. Buckets: images, shaders." },
+
+    { "id": "users-coll", "label": "users", "category": "data", "path": "backend/src/models/User.ts", "detail": "name, email(unique), bcrypt password (pre-save hash), image ref; comparePassword + createJWT methods." },
+    { "id": "visualizers-coll", "label": "visualizers", "category": "data", "path": "backend/src/models/Visualizer.ts", "detail": "name, source, glsl (shader src), imageUrl ref, isDemo, tags[]. Seeded by scripts/seedVisualizers.ts." },
+    { "id": "uservisuals-coll", "label": "uservisuals", "category": "data", "path": "backend/src/models/UserVisual.ts", "detail": "userId + visualizerId join (unique compound index) = saved favorites." },
+    { "id": "images-coll", "label": "images", "category": "data", "path": "backend/src/models/Image.ts", "detail": "ownerType(user|visualizer)+ownerId (unique), fileId → GridFS, filename, contentType, size." },
+    { "id": "gridfs", "label": "GridFS buckets", "category": "data", "path": "MongoDB GridFS: images, shaders", "detail": "Binary file storage for avatars / visualizer images inside MongoDB." },
+
+    { "id": "mongodb", "label": "MongoDB Atlas", "category": "external", "path": "MONGO_URI (backend/src/db/connect.ts)", "detail": "Mongoose connection; sole datastore (collections + GridFS)." },
+    { "id": "web-audio", "label": "Web Audio / MediaDevices", "category": "external", "path": "Browser API", "detail": "navigator.mediaDevices.getUserMedia + AudioContext/AnalyserNode — live microphone capture + FFT." },
+    { "id": "render", "label": "Render", "category": "external", "path": "render.yaml", "detail": "Hosts the single Node web service (build → npm start), health check /api/v1/health, autoDeploy from dev." }
+  ],
+  "edges": [
+    { "from": "render", "to": "express-app", "label": "hosts" },
+    { "from": "user", "to": "spa", "label": "loads SPA" },
+    { "from": "express-app", "to": "spa", "label": "serves frontend/dist" },
+    { "from": "spa", "to": "auth-provider" },
+    { "from": "spa", "to": "login-page" },
+    { "from": "spa", "to": "explore-page" },
+    { "from": "spa", "to": "player-page" },
+    { "from": "spa", "to": "settings-page" },
+    { "from": "login-page", "to": "auth-provider" },
+    { "from": "auth-provider", "to": "api-client" },
+    { "from": "explore-page", "to": "api-client" },
+    { "from": "settings-page", "to": "api-client" },
+    { "from": "player-page", "to": "glsl-loader" },
+    { "from": "player-page", "to": "audio-analyzer" },
+    { "from": "player-page", "to": "webgl-renderer" },
+    { "from": "glsl-loader", "to": "api-client" },
+    { "from": "audio-analyzer", "to": "web-audio" },
+    { "from": "webgl-renderer", "to": "audio-analyzer", "label": "getAudioData()" },
+    { "from": "api-client", "to": "express-app", "label": "fetch (cookie)" },
+    { "from": "express-app", "to": "auth-route" },
+    { "from": "express-app", "to": "visualizer-route" },
+    { "from": "express-app", "to": "user-route" },
+    { "from": "express-app", "to": "images-route" },
+    { "from": "auth-route", "to": "jwt-util" },
+    { "from": "auth-route", "to": "users-coll" },
+    { "from": "visualizer-route", "to": "auth-mw" },
+    { "from": "visualizer-route", "to": "visualizers-coll" },
+    { "from": "user-route", "to": "auth-mw" },
+    { "from": "user-route", "to": "users-coll" },
+    { "from": "user-route", "to": "uservisuals-coll" },
+    { "from": "images-route", "to": "auth-mw" },
+    { "from": "images-route", "to": "upload-mw" },
+    { "from": "images-route", "to": "images-coll" },
+    { "from": "images-route", "to": "gridfs-util" },
+    { "from": "gridfs-util", "to": "gridfs" },
+    { "from": "users-coll", "to": "mongodb" },
+    { "from": "visualizers-coll", "to": "mongodb" },
+    { "from": "uservisuals-coll", "to": "mongodb" },
+    { "from": "images-coll", "to": "mongodb" },
+    { "from": "gridfs", "to": "mongodb" }
+  ],
+  "flows": [
+    {
+      "id": "play-visualizer",
+      "name": "Play visualizer (audio → GLSL → GPU)",
+      "description": "Load a visualizer's GLSL, capture mic audio, FFT it, and drive the three.js fragment shader every frame.",
+      "steps": [
+        { "from": "user", "to": "player-page", "label": "Open /visualizer/:id", "detail": "ProtectedRoute (frontend/src/routes/ProtectedRoute.tsx) requires a session." },
+        { "from": "player-page", "to": "glsl-loader", "label": "usePlayerGlsl(id)", "detail": "frontend/src/hooks/usePlayerGlsl.ts → loadVisualizerGlsl" },
+        { "from": "glsl-loader", "to": "api-client", "label": "getVisualizer(id)", "detail": "frontend/src/api/visualizers.ts" },
+        { "from": "api-client", "to": "express-app", "label": "GET /api/v1/visualizers/:id", "detail": "credentials:'include' sends signed JWT cookie." },
+        { "from": "express-app", "to": "visualizer-route", "label": "route match", "detail": "getVisualizerById" },
+        { "from": "visualizer-route", "to": "auth-mw", "label": "authenticateUser", "detail": "verify req.signedCookies.token" },
+        { "from": "visualizer-route", "to": "visualizers-coll", "label": "Visualizer.findById", "detail": "full doc incl glsl field" },
+        { "from": "visualizers-coll", "to": "mongodb", "label": "read document" },
+        { "from": "visualizer-route", "to": "glsl-loader", "label": "200 { data: { glsl, ... } }", "detail": "shader source cached in glslCache" },
+        { "from": "player-page", "to": "audio-analyzer", "label": "useAudioAnalyzer()", "detail": "connect microphone" },
+        { "from": "audio-analyzer", "to": "web-audio", "label": "getUserMedia + AnalyserNode", "detail": "FFT_SIZE 256 → 128 frequency bins" },
+        { "from": "player-page", "to": "webgl-renderer", "label": "useVisualizer(canvas, {glsl}, getAudioData)", "detail": "frontend/src/hooks/useVisualizer.ts" },
+        { "from": "webgl-renderer", "to": "audio-analyzer", "label": "getAudioData() per frame", "detail": "Uint8Array copied into uAudio DataTexture" },
+        { "from": "webgl-renderer", "to": "user", "label": "render to canvas", "detail": "requestAnimationFrame loop; uTime + uResolution + uAudio uniforms" }
+      ]
+    },
+    {
+      "id": "login",
+      "name": "Log in",
+      "description": "Authenticate credentials and receive a JWT in a signed httpOnly cookie.",
+      "steps": [
+        { "from": "user", "to": "login-page", "label": "Submit email + password" },
+        { "from": "login-page", "to": "auth-provider", "label": "login(email, password)", "detail": "context/AuthProvider.tsx" },
+        { "from": "auth-provider", "to": "express-app", "label": "POST /api/v1/auth/login", "detail": "fetch credentials:'include'" },
+        { "from": "express-app", "to": "auth-route", "label": "route + authLimiter", "detail": "20 req / 15 min in prod" },
+        { "from": "auth-route", "to": "users-coll", "label": "User.findOne + comparePassword", "detail": "bcrypt.compare" },
+        { "from": "users-coll", "to": "mongodb", "label": "read user" },
+        { "from": "auth-route", "to": "jwt-util", "label": "createJWT + attachCookiesToResponse", "detail": "utils/jwt.ts" },
+        { "from": "jwt-util", "to": "user", "label": "Set-Cookie token", "detail": "httpOnly, signed, sameSite:strict, secure in prod" },
+        { "from": "auth-route", "to": "auth-provider", "label": "200 { data: user }", "detail": "setUser → unlock protected routes" }
+      ]
+    },
+    {
+      "id": "explore",
+      "name": "Browse / Explore",
+      "description": "Paginated, searchable, tag-filtered list of visualizers (glsl field excluded).",
+      "steps": [
+        { "from": "user", "to": "explore-page", "label": "Open /explore, search / pick tag" },
+        { "from": "explore-page", "to": "api-client", "label": "listVisualizers({search,tag,page})", "detail": "api/visualizers.ts; useVisualizer hook" },
+        { "from": "api-client", "to": "express-app", "label": "GET /api/v1/visualizers?search&tag&page&limit" },
+        { "from": "express-app", "to": "visualizer-route", "label": "getAllVisualizers (public)" },
+        { "from": "visualizer-route", "to": "visualizers-coll", "label": "find(filter).select(-glsl).skip.limit + countDocuments", "detail": "page≤default, limit cap 50, $regex name, tag match" },
+        { "from": "visualizers-coll", "to": "mongodb", "label": "paginated read" },
+        { "from": "visualizer-route", "to": "explore-page", "label": "200 { data, total, page, pages }" }
+      ]
+    },
+    {
+      "id": "save-favorite",
+      "name": "Save favorite",
+      "description": "Add a visualizer to the signed-in user's collection.",
+      "steps": [
+        { "from": "user", "to": "explore-page", "label": "Click save on a card", "detail": "hooks/useFavoriteVisual.ts" },
+        { "from": "explore-page", "to": "api-client", "label": "addVisualToCollection(id)" },
+        { "from": "api-client", "to": "express-app", "label": "POST /api/v1/users/current/visuals/:id" },
+        { "from": "express-app", "to": "user-route", "label": "router.use(authenticateUser)" },
+        { "from": "user-route", "to": "auth-mw", "label": "verify JWT cookie" },
+        { "from": "user-route", "to": "uservisuals-coll", "label": "UserVisual.create", "detail": "unique (userId,visualizerId) → duplicate rejected" },
+        { "from": "uservisuals-coll", "to": "mongodb", "label": "insert join doc" },
+        { "from": "user-route", "to": "explore-page", "label": "201 saved" }
+      ]
+    },
+    {
+      "id": "upload-avatar",
+      "name": "Upload avatar",
+      "description": "Store a user image in GridFS and link it on the User document.",
+      "steps": [
+        { "from": "user", "to": "settings-page", "label": "Choose image file" },
+        { "from": "settings-page", "to": "api-client", "label": "uploadAvatar(FormData)", "detail": "api/images.ts" },
+        { "from": "api-client", "to": "express-app", "label": "POST /api/v1/images/users/user" },
+        { "from": "express-app", "to": "images-route", "label": "route match" },
+        { "from": "images-route", "to": "auth-mw", "label": "authenticateUser" },
+        { "from": "images-route", "to": "upload-mw", "label": "multer single('image')", "detail": "5MB + mime-type validation" },
+        { "from": "images-route", "to": "gridfs-util", "label": "uploadBufferToGridFS('images')", "detail": "old file deleted if replacing" },
+        { "from": "gridfs-util", "to": "gridfs", "label": "write file stream" },
+        { "from": "images-route", "to": "images-coll", "label": "Image.findOneAndUpdate upsert", "detail": "then User.image set to image._id" },
+        { "from": "images-coll", "to": "mongodb", "label": "upsert metadata" },
+        { "from": "images-route", "to": "settings-page", "label": "200 { imageId }" }
+      ]
+    },
+    {
+      "id": "serve-image",
+      "name": "Serve image",
+      "description": "Stream a visualizer/user image binary out of GridFS to an <img> tag (public).",
+      "steps": [
+        { "from": "user", "to": "express-app", "label": "<img> GET /api/v1/images/visualizers/:id" },
+        { "from": "express-app", "to": "images-route", "label": "getVisualizerImage (public)" },
+        { "from": "images-route", "to": "images-coll", "label": "Image.findOne(ownerType,ownerId)" },
+        { "from": "images-coll", "to": "mongodb", "label": "read metadata (fileId, contentType)" },
+        { "from": "images-route", "to": "gridfs-util", "label": "openGridFSDownloadStream(fileId)" },
+        { "from": "gridfs-util", "to": "gridfs", "label": "open download stream" },
+        { "from": "images-route", "to": "user", "label": "pipe stream → response", "detail": "Content-Type from metadata" }
+      ]
+    }
+  ],
+  "meta": {
+    "generatedAt": "2026-06-01",
+    "sourceCommit": "2cd17efb8f7fbad62cb0f961ceca369b5f73e5ed",
+    "notes": "Verified against the repo at the above commit. The unused PostgreSQL scaffold (backend/src/config/db.postgres.js + the 'pg' dependency) is intentionally omitted — server.ts connects only to MongoDB. AuthProvider.tsx calls fetch directly rather than through api/client.ts; both are modeled as the same client→server hop. Default flow is 'play-visualizer'."
+  }
+}
